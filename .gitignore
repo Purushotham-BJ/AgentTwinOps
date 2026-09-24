@@ -1,0 +1,188 @@
+# ============================================================
+# AgentTwinOps - Root Git Ignore
+# ============================================================
+
+# ------------------------------------------------------------
+# Environment / Secrets
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Secret / credential files
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
+secrets.json
+
+# ------------------------------------------------------------
+# Python
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ------------------------------------------------------------
+# Testing / Coverage
+# ------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Test databases / temporary DB files
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary verification files
+tmp_*.py
+temp_*.py
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+*.log
+logs/
+
+# ------------------------------------------------------------
+# Node / React / Frontend
+# ------------------------------------------------------------
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.yarn-cache/
+
+# Frontend build output
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.next/
+frontend/out/
+
+# General Node build output
+dist/
+build/
+
+# ------------------------------------------------------------
+# JavaScript / TypeScript tooling
+# ------------------------------------------------------------
+.nyc_output/
+*.tsbuildinfo
+
+# ------------------------------------------------------------
+# Docker
+# ------------------------------------------------------------
+.docker/
+docker-data/
+docker-volumes/
+
+# ------------------------------------------------------------
+# Kubernetes local files
+# ------------------------------------------------------------
+.kube/
+*.kubeconfig
+
+# ------------------------------------------------------------
+# IDE / Editors
+# ------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+.idea/
+*.iml
+
+# ------------------------------------------------------------
+# Operating System
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ------------------------------------------------------------
+# Temporary files
+# ------------------------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*~
+
+# ------------------------------------------------------------
+# Jupyter
+# ------------------------------------------------------------
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------
+# ML / AI generated artifacts
+# ------------------------------------------------------------
+wandb/
+.mlflow/
+mlruns/
+
+# Model caches / generated models
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+
+# ------------------------------------------------------------
+# Local datasets / generated data
+# ------------------------------------------------------------
+data/local/
+datasets/local/
+artifacts/
+outputs/
+
+# ------------------------------------------------------------
+# Prometheus / monitoring local data
+# ------------------------------------------------------------
+prometheus-data/
+grafana-data/
+
+# ------------------------------------------------------------
+# AWS / Terraform local state
+# ------------------------------------------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# AWS CLI local credentials
+.aws/
+
+# ------------------------------------------------------------
+# OS / editor temporary directories
+# ------------------------------------------------------------
+.cache/
+.temp/
+tmp/
