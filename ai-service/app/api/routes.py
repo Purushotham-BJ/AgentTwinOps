@@ -50,11 +50,15 @@ async def predict_failure(request: PredictionRequest):
 @router.post("/simulate", response_model=SimulationResponse)
 async def simulate_scenario(request: SimulationRequest):
     """Run simulation scenario"""
-    result = await simulation_service.simulate(
-        scenario=request.scenario,
-        service_id=request.service_id,
-        parameters=request.parameters
-    )
+    try:
+        result = await simulation_service.simulate(
+            scenario=request.scenario,
+            service_id=request.service_id,
+            parameters=request.parameters,
+            horizon_minutes=request.horizon_minutes,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return SimulationResponse(data=result, timestamp=datetime.now())
 
 

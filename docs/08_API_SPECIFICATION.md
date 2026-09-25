@@ -68,15 +68,20 @@ predictions synchronize `Twin.predicted_state` through the backend API.
 
 # Simulation APIs
 
-POST /api/simulate/cpu
+POST /api/v1/simulate
 
-POST /api/simulate/traffic
+Request fields:
 
-POST /api/simulate/database
+- `service_id` (required): an existing infrastructure service UUID
+- `scenario`: `cpu_spike`, `traffic_surge`, `database_failure`, `pod_eviction`, or `custom`
+- `parameters`: optional absolute `cpu_usage`, `memory_usage`, `latency_ms`, and `status` changes
+- `horizon_minutes`: optional 1–1440 minute projection horizon
 
-POST /api/simulate/pod
-
-GET /api/simulations
+The response includes `baseline_state`, `simulated_state`,
+`simulated_health_score`, `simulated_failure_probability`,
+`simulated_operational_status`, and deterministic `impact_summary` values.
+Unknown services return `404`. The endpoint is transient and does not mutate
+infrastructure, metrics, `current_state`, or `predicted_state`.
 
 ---
 

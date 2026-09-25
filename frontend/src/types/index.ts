@@ -201,13 +201,14 @@ export interface PredictionResult {
   prediction_source: 'model' | 'heuristic' | 'fallback' | 'none';
 }
 
-// ─── Simulation (frontend-only / future API) ──────────────────────────────────
-export type SimulationScenario = 'cpu_spike' | 'traffic_surge' | 'database_failure' | 'pod_eviction';
+// ─── Digital Twin simulation ──────────────────────────────────────────────────
+export type SimulationScenario = 'cpu_spike' | 'traffic_surge' | 'database_failure' | 'pod_eviction' | 'custom';
 
 export interface SimulationRequest {
   scenario: SimulationScenario;
   service_id: string;
   parameters: Record<string, number | string>;
+  horizon_minutes?: number;
 }
 
 export interface SimulationResult {
@@ -215,6 +216,13 @@ export interface SimulationResult {
   scenario: SimulationScenario;
   service_id: string;
   status: 'running' | 'completed' | 'failed';
+  baseline_state: Record<string, number | string>;
+  scenario_changes: Record<string, number | string>;
+  simulated_state: Record<string, number | string>;
+  simulated_health_score: number;
+  simulated_failure_probability: number;
+  simulated_operational_status: string;
+  impact_summary: string[];
   predicted_impact: {
     cpu_delta: number;
     memory_delta: number;
