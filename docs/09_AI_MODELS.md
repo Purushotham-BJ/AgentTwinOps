@@ -127,13 +127,21 @@ One-Class SVM
 
 # Recommendation Engine
 
-Input
+Inputs
 
-Prediction Results
+- Current metrics
+- Digital Twin current state, health, status, failure probability, and anomalies
+- Associated incidents
+- Prediction or simulation state when already represented in the Twin
 
 Output
 
-Infrastructure Recommendations
+Deterministic, explainable infrastructure recommendations. CPU, memory,
+latency, failure-risk, degraded-status, anomaly, and incident rules produce
+stable IDs, priorities, reasons, actions, categories, and rule confidence.
+Healthy services produce no recommendations. Duplicate recommendation types
+are collapsed per service and priorities are sorted critical, high, medium,
+low. Confidence is an evidence score for a rule, not an ML probability.
 
 Examples
 

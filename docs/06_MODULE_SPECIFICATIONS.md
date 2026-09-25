@@ -116,6 +116,10 @@ Recommendations
 - Restart
 - Resource Allocation
 
+Recommendations are generated on demand from real operational state. Healthy
+services return an empty result; active CPU, memory, latency, failure-risk,
+status, anomaly, and incident rules produce actionable, prioritized results.
+
 ---
 
 # Module 7

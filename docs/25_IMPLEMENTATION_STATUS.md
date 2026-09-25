@@ -28,6 +28,7 @@
 - Backend Integration: Fully verified. AI Service connects to Backend via `http://backend:8000`, authenticates using service account credentials, and successfully retrieves infrastructure data for recommendations.
 - Prediction pipeline: CPU and memory Random Forest forecasts use backend historical metrics, deterministic lag features, explicit insufficient-data handling, model metrics, and prediction-source reporting.
 - Twin integration: Successful CPU and memory forecasts persist `predicted_state` without overwriting `current_state`.
+- Recommendation engine: Deterministic rule engine evaluates metrics, Digital Twin state, incidents, failure risk, and anomalies without mutating operational data.
 
 ## Frontend
 - Status: Containerized via Vite dev server.
@@ -35,7 +36,7 @@
 
 ## Testing
 - Backend tests: 31 passed / 1 skipped / 0 failed.
-- AI-service tests: 10 passed / 0 failed.
+- AI-service tests: Sprint 7 baseline 17 passed; Sprint 8 recommendation coverage added.
 - Previous DB connection errors are entirely resolved.
 
 ## Containerization

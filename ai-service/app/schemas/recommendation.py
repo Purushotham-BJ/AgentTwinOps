@@ -26,6 +26,9 @@ class Recommendation(BaseModel):
     service_name: str | None = None
     title: str
     description: str
+    type: str
+    reason: str
+    action: str
     priority: Literal["low", "medium", "high", "critical"]
     severity: Literal["low", "medium", "high", "critical"]
     expected_impact: str
@@ -34,6 +37,7 @@ class Recommendation(BaseModel):
     estimated_effort: Literal["low", "medium", "high"]
     created_at: datetime
     source: Literal["ai", "rule", "manual"] = "ai"
+    confidence: float = Field(ge=0.0, le=1.0)
 
 
 class RecommendationListResponse(BaseModel):

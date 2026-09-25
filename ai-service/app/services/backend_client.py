@@ -58,11 +58,11 @@ class BackendClient:
             headers["Authorization"] = token if token.startswith("Bearer ") else f"Bearer {token}"
         return headers
 
-    async def get_infrastructure(self) -> List[Dict[str, Any]]:
+    async def get_infrastructure(self, auth_token: str | None = None) -> List[Dict[str, Any]]:
         """Fetch all infrastructure services"""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                headers = await self._get_headers_async()
+                headers = await self._get_headers_async(auth_token)
                 response = await client.get(
                     f"{self.base_url}/api/v1/infrastructure",
                     headers=headers
@@ -103,11 +103,11 @@ class BackendClient:
                 infrastructure = self._mock_infrastructure()
                 return next((svc for svc in infrastructure if svc["id"] == service_id), None)
 
-    async def get_incidents(self) -> List[Dict[str, Any]]:
+    async def get_incidents(self, auth_token: str | None = None) -> List[Dict[str, Any]]:
         """Fetch all incidents"""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                headers = await self._get_headers_async()
+                headers = await self._get_headers_async(auth_token)
                 response = await client.get(
                     f"{self.base_url}/api/v1/incidents",
                     headers=headers
@@ -170,6 +170,21 @@ class BackendClient:
                 if settings.AI_SERVICE_MODE == "real":
                     raise Exception(f"Backend metrics API unavailable: {e}")
                 return self._mock_metrics(service_id, limit)
+
+    async def get_twin_by_service(
+        self, service_id: str, auth_token: str | None = None
+    ) -> Dict[str, Any] | None:
+        """Fetch the persisted Digital Twin without modifying it."""
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            headers = await self._get_headers_async(auth_token)
+            response = await client.get(
+                f"{self.base_url}/api/v1/twins/by-service/{service_id}",
+                headers=headers,
+            )
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
 
     async def update_twin_predicted_state(
         self, service_id: str, predicted_state: Dict[str, Any]

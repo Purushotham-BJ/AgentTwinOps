@@ -87,9 +87,15 @@ infrastructure, metrics, `current_state`, or `predicted_state`.
 
 # Recommendation APIs
 
-GET /api/recommendations
+GET /api/v1/recommendations
 
-POST /api/recommendations/generate
+POST /api/v1/recommendations/generate
+
+The endpoints require the caller's backend bearer token and evaluate real
+registered services. `infrastructure_ids` may restrict generation to selected
+services; unknown IDs return `404`. Responses include `type`, `priority`,
+`category`, `reason`, `action`, and deterministic `confidence`. No
+recommendation endpoint mutates infrastructure, metrics, or Twin state.
 
 ---
 

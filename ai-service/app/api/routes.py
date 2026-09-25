@@ -67,20 +67,31 @@ async def simulate_scenario(
 
 
 @router.get("/recommendations", response_model=RecommendationListResponse)
-async def get_recommendations():
+async def get_recommendations(authorization: str | None = Header(default=None)):
     """Get all recommendations"""
-    recommendations = await recommendation_service.generate_recommendations()
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
+    recommendations = await recommendation_service.generate_recommendations(auth_token=authorization)
     return RecommendationListResponse(data=recommendations, timestamp=datetime.now())
 
 
 @router.post("/recommendations/generate", response_model=RecommendationListResponse)
-async def generate_recommendations(request: RecommendationGenerateRequest):
+async def generate_recommendations(
+    request: RecommendationGenerateRequest,
+    authorization: str | None = Header(default=None),
+):
     """Generate new recommendations"""
-    recommendations = await recommendation_service.generate_recommendations(
-        infrastructure_ids=request.infrastructure_ids,
-        incident_ids=request.incident_ids,
-        force_regenerate=request.force_regenerate
-    )
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
+    try:
+        recommendations = await recommendation_service.generate_recommendations(
+            infrastructure_ids=request.infrastructure_ids,
+            incident_ids=request.incident_ids,
+            force_regenerate=request.force_regenerate,
+            auth_token=authorization,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return RecommendationListResponse(data=recommendations, timestamp=datetime.now())
 
 

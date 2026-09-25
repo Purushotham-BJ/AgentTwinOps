@@ -244,6 +244,9 @@ export interface Recommendation {
   service_name?: string;
   title: string;
   description: string;
+  type: string;
+  reason: string;
+  action: string;
   priority: RecommendationPriority;
   severity: IncidentSeverity;
   expected_impact: string;
@@ -252,6 +255,7 @@ export interface Recommendation {
   estimated_effort: 'low' | 'medium' | 'high';
   created_at: string;
   source: 'ai' | 'rule' | 'manual';
+  confidence: number;
 }
 
 // ─── Dashboard aggregates ─────────────────────────────────────────────────────

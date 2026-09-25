@@ -13,6 +13,12 @@ const aiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+aiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 export const recommendationService = {
   /**
    * Fetch current AI recommendations.

@@ -162,6 +162,11 @@ Generate:
 - Incident Report
 - Recommended Actions
 
+The implemented Recommendation Agent is deterministic and rule-based. It
+evaluates real metrics, Digital Twin state, operational status, health,
+failure probability, anomalies, and service incidents. It returns deduplicated
+actions sorted by criticality and does not execute infrastructure changes.
+
 ---
 
 # Agent Communication
