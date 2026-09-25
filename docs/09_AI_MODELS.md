@@ -37,6 +37,12 @@ Algorithms
 - XGBoost
 - Random Forest
 
+The current implementation uses a CPU-based Random Forest regressor. It retrieves
+historical CPU metrics through the backend metrics API and builds deterministic
+four-point lag features (`t-4` through `t-1`) to predict the next value. At least
+30 historical records are required. Responses include MAE, RMSE, and R² from the
+current validation split; these are measurements, not accuracy claims.
+
 ---
 
 # Memory Prediction
@@ -54,6 +60,9 @@ Future Memory Usage
 Algorithms
 
 - XGBoost
+
+The memory implementation uses the same lag-feature pipeline and minimum history
+requirement as CPU prediction.
 
 ---
 
@@ -78,8 +87,19 @@ Failure Probability
 Algorithms
 
 Random Forest
-
 Gradient Boosting
+
+The current failure prediction is a deterministic operational heuristic based on
+service health, incidents, and horizon context. It is not represented as a
+supervised ML classifier and does not use fabricated training labels.
+
+When history is below the configured minimum, CPU and memory predictions return
+`INSUFFICIENT_DATA` with `prediction_source: none`. Unexpected model failures are
+reported as `ERROR` with `prediction_source: fallback`; they are never reported
+as successful ML predictions.
+
+Successful CPU and memory predictions are sent through the backend Twin API and
+persisted in `Twin.predicted_state`. `current_state` is not overwritten.
 
 ---
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncIterator
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -19,6 +20,7 @@ from app.config.settings import get_settings
 from app.database.engine import engine
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 @asynccontextmanager
@@ -35,9 +37,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     None
         Control returns to the ASGI server while the app is running.
     """
-    settings = get_settings()
+    # Import the collector
+    from app.collector.collector import collect_metrics
 
-    # ── STARTUP ─────────────────────────────────────────────────
+    # Start the background collector task
+    metric_collector_task = asyncio.create_task(collect_metrics(app))
+    # Store task on app state for later shutdown
+    app.state.metric_collector_task = metric_collector_task
+
+    # Proceed with normal startup logging
     logger.info(
         "[STARTUP] %s v%s starting -- env=%s debug=%s",
         settings.APP_NAME,
@@ -56,6 +64,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         "[SHUTDOWN] %s shutting down -- cleaning up resources ...",
         settings.APP_NAME,
     )
+
+    # Cancel the collector task if it is still running
+    collector_task = getattr(app.state, "metric_collector_task", None)
+    if collector_task:
+        collector_task.cancel()
+        try:
+            await collector_task
+        except asyncio.CancelledError:
+            logger.info("[SHUTDOWN] Metric collector task cancelled")
 
     # Clean up DB engine/pool to ensure connections are closed before
     # the event loop is torn down (prevents asyncpg "Event loop is closed" errors).

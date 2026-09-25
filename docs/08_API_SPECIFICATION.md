@@ -52,13 +52,17 @@ POST /api/twins/create
 
 # Prediction APIs
 
-POST /api/predict/cpu
+POST /api/v1/predict/cpu
 
-POST /api/predict/memory
+POST /api/v1/predict/memory
 
-POST /api/predict/failure
+POST /api/v1/predict/failure
 
-GET /api/predictions
+Each request contains `service_id` and `horizon_minutes` (30–1440 minutes).
+Responses contain `status`, `prediction_source`, `historical_metrics`,
+`feature_vector`, and `model_metrics`. `INSUFFICIENT_DATA` is returned when the
+service has fewer than 30 historical records. Successful CPU and memory
+predictions synchronize `Twin.predicted_state` through the backend API.
 
 ---
 

@@ -1,5 +1,5 @@
 """Prediction schemas"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Literal
 from datetime import datetime
 from .common import RiskLevel, MetricPoint
@@ -11,6 +11,10 @@ class PredictionRequest(BaseModel):
 
 
 class PredictionResult(BaseModel):
+    # Suppress the "model_" namespace warning from Pydantic — the field name
+    # model_metrics is intentional and not a conflicting config option.
+    model_config = ConfigDict(protected_namespaces=())
+
     id: str
     service_id: str
     prediction_type: Literal["cpu", "memory", "failure"]
@@ -23,6 +27,12 @@ class PredictionResult(BaseModel):
     created_at: datetime
     horizon_minutes: int
     data_points: List[MetricPoint]
+    # Sprint 6 fields
+    status: Literal["SUCCESS", "INSUFFICIENT_DATA", "ERROR"] = "SUCCESS"
+    historical_metrics: List[float] = []   # raw metric values used for prediction
+    feature_vector: List[List[float]] = [] # feature matrix used in model
+    model_metrics: dict = {}               # e.g., mae, rmse, r2
+    prediction_source: Literal["model", "heuristic", "fallback", "none"] = "model"
 
 
 class PredictionResponse(BaseModel):

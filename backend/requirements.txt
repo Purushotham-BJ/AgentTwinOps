@@ -3,9 +3,11 @@ fastapi
 uvicorn[standard]
 pydantic>=2.0
 pydantic-settings>=2.0
+psutil
 
-# ── Database & cache (placeholders for future phases) ───────
+# ── Database …
 sqlalchemy>=2.0
+greenlet
 alembic
 asyncpg
 redis

@@ -145,6 +145,16 @@ export interface TwinState {
   error_rate: number;
   request_rate: number;
   status: InfrastructureStatus;
+  prediction_type?: PredictionResult['prediction_type'];
+  predicted_value?: number;
+  failure_probability?: number;
+  confidence?: number;
+  risk_level?: RiskLevel;
+  recommended_action?: string;
+  prediction_timestamp?: string;
+  horizon_minutes?: number;
+  prediction_source?: PredictionResult['prediction_source'];
+  model_metrics?: Record<string, number | string | null>;
 }
 
 // ─── Metrics (frontend-only / future API) ────────────────────────────────────
@@ -168,7 +178,7 @@ export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 export interface PredictionRequest {
   service_id: string;
-  horizon_minutes?: number;
+  horizon_minutes: number;
 }
 
 export interface PredictionResult {
@@ -184,6 +194,11 @@ export interface PredictionResult {
   created_at: string;
   horizon_minutes: number;
   data_points: MetricPoint[];
+  status: 'SUCCESS' | 'INSUFFICIENT_DATA' | 'ERROR';
+  historical_metrics: number[];
+  feature_vector: number[][];
+  model_metrics: Record<string, number | string | null>;
+  prediction_source: 'model' | 'heuristic' | 'fallback' | 'none';
 }
 
 // ─── Simulation (frontend-only / future API) ──────────────────────────────────

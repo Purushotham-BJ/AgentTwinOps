@@ -39,7 +39,7 @@ class BaseConfig(BaseSettings):
 
     # ── Database ────────────────────────────────────────────────
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:your_password@localhost:5432/agenttwinops"
+        default="postgresql+asyncpg://postgres:admin_password@localhost:5432/agenttwinops"
     )
 
     # ── Server ──────────────────────────────────────────────────
@@ -60,6 +60,8 @@ class BaseConfig(BaseSettings):
 
     # ── API ─────────────────────────────────────────────────────
     API_V1_PREFIX: str = "/api/v1"
+    # ── Metrics collection interval ───────────────────────────────
+    METRIC_STALE_THRESHOLD: int = 30  # seconds, default > collection interval
 
     # ── JWT / Auth ─────────────────────────────────────────────
     # Use existing SECRET_KEY for signing tokens; algorithm and expiry
@@ -106,6 +108,8 @@ class TestingConfig(BaseConfig):
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"
     # Ensure tests run with a known secret key
     SECRET_KEY: SecretStr = Field(default=SecretStr("test-secret-key"))
+    # Use same DB credentials as Docker compose for test DB
+    DATABASE_URL: str = Field(default="postgresql+asyncpg://postgres:admin_password@localhost:5432/agenttwinops")
 
 
 class ProductionConfig(BaseConfig):

@@ -7,7 +7,6 @@ import { Button } from '@/components/common/Button';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState, EmptyState } from '@/components/common/ErrorState';
 import { ProgressBar } from '@/components/common/ProgressBar';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { formatRelativeTime, formatMs, formatPercent } from '@/utils/format';
 import { getSyncColor, getHealthColor } from '@/utils/statusHelpers';
 import type { TwinObject } from '@/types';
@@ -50,7 +49,6 @@ export function DigitalTwinPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
-          <MockDataBanner feature="Twin state & predictions" apiEndpoint="GET /api/v1/twins" />
           {lastSynced && (
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Clock size={12} />Synced {formatRelativeTime(lastSynced.toISOString())}
@@ -100,6 +98,14 @@ export function DigitalTwinPage() {
 
 function TwinCard({ twin }: { twin: TwinObject }) {
   const healthColor = getHealthColor(twin.health_score);
+  const predicted = twin.predicted_state;
+  const predictedValue = (metric: 'cpu_usage' | 'memory_usage') => {
+    const direct = predicted[metric];
+    if (typeof direct === 'number') return direct;
+    return predicted.prediction_type === (metric === 'cpu_usage' ? 'cpu' : 'memory')
+      ? predicted.predicted_value ?? twin.current_state[metric]
+      : twin.current_state[metric];
+  };
 
   return (
     <Card>
@@ -135,11 +141,24 @@ function TwinCard({ twin }: { twin: TwinObject }) {
 
       {/* State comparison */}
       <div>
-        <StatRow label="CPU Usage" current={twin.current_state.cpu_usage} predicted={twin.predicted_state.cpu_usage} />
-        <StatRow label="Memory Usage" current={twin.current_state.memory_usage} predicted={twin.predicted_state.memory_usage} />
-        <StatRow label="Latency" current={twin.current_state.latency_ms} predicted={twin.predicted_state.latency_ms} unit="ms" />
-        <StatRow label="Error Rate" current={twin.current_state.error_rate} predicted={twin.predicted_state.error_rate} />
+        <StatRow label="CPU Usage" current={twin.current_state.cpu_usage} predicted={predictedValue('cpu_usage')} />
+        <StatRow label="Memory Usage" current={twin.current_state.memory_usage} predicted={predictedValue('memory_usage')} />
+        <StatRow label="Latency" current={twin.current_state.latency_ms} predicted={twin.predicted_state.latency_ms ?? twin.current_state.latency_ms} unit="ms" />
+        <StatRow label="Error Rate" current={twin.current_state.error_rate} predicted={twin.predicted_state.error_rate ?? twin.current_state.error_rate} />
       </div>
+
+      {predicted.prediction_source && (
+        <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-3)', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+          Predicted state from <strong style={{ color: 'var(--color-text-secondary)' }}>{predicted.prediction_source}</strong>
+          {predicted.prediction_timestamp && <> · {formatRelativeTime(predicted.prediction_timestamp)}</>}
+          {predicted.horizon_minutes && <> · horizon {predicted.horizon_minutes}m</>}
+          {predicted.model_metrics && Object.keys(predicted.model_metrics).length > 0 && (
+            <div style={{ marginTop: '6px' }}>
+              Metrics: {Object.entries(predicted.model_metrics).map(([key, value]) => `${key}=${value}`).join(' · ')}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Last synced */}
       <div style={{ marginTop: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>

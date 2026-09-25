@@ -202,6 +202,16 @@ Recommendation
 
 After every prediction cycle
 
+## Predicted State
+
+The metrics collector updates `current_state` from the latest observed metric.
+The prediction service updates only `predicted_state` after a successful CPU or
+memory forecast. The persisted predicted state contains the prediction type and
+value, confidence, failure probability, horizon, timestamp, prediction source,
+and available model metrics. Insufficient-data and failed predictions are not
+persisted as forecasts. Twin synchronization failures are logged and surfaced to
+the prediction caller rather than being presented as successful synchronization.
+
 ---
 
 # Design Goals

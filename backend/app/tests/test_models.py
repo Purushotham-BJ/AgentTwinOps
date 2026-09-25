@@ -303,18 +303,20 @@ async def test_incident_default_severity_and_status(db_session: AsyncSession):
 # ---------------------------------------------------------------------------
 
 def test_base_metadata_contains_expected_tables():
-    """Verify Base.metadata contains exactly the three intended PostgreSQL tables."""
+    """Verify all current application tables are registered in metadata."""
     from app.database.base import Base
     import app.models  # noqa: F401 — ensure models are imported
 
     table_names = set(Base.metadata.tables.keys())
-    expected = {"users", "infrastructure", "incidents"}
+    expected = {
+        "users",
+        "infrastructure",
+        "incidents",
+        "metrics",
+        "twins",
+        "twin_history",
+    }
 
     assert expected.issubset(table_names), (
         f"Missing tables: {expected - table_names}"
-    )
-    # Verify no unintended tables are present (no digital twin, metrics, etc.)
-    unexpected = table_names - expected
-    assert not unexpected, (
-        f"Unexpected tables found in Base.metadata: {unexpected}"
     )

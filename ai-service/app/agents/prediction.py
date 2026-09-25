@@ -7,6 +7,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
 
+def _get_insufficient_data_error_class():
+    """Lazy import to avoid circular dependency between agents and services."""
+    from app.services.model_manager import InsufficientDataError
+    return InsufficientDataError
+
+
 class PredictionAgent(BaseAgent):
     """
     Prediction Agent
@@ -39,37 +45,67 @@ class PredictionAgent(BaseAgent):
     
     async def _predict_cpu(self, service_id: str, horizon: int) -> Dict[str, Any]:
         """Predict CPU usage"""
-        # Base CPU prediction with realistic values
-        base_cpu = 35 + (random.random() * 30)  # 35-65% base range
-        
-        # Trend analysis - services under load tend to increase
-        trend_per_hour = 1 + (random.random() * 4)  # 1-5% increase per hour
-        predicted_cpu = min(95, base_cpu + (trend_per_hour * horizon / 60))
-        
-        # If LLM available, enhance analysis
+        InsufficientDataError = _get_insufficient_data_error_class()
+        # Use ML model for CPU prediction if enabled
+        try:
+            from app.services.model_manager import predict_cpu
+            # predict_cpu returns (predicted_value, model_metrics, feature_matrix, raw_values)
+            predicted_cpu, metrics, feature_matrix, raw_values = predict_cpu(service_id, horizon)
+            status = "SUCCESS"
+            prediction_source = "model"
+            historical_metrics = raw_values
+            feature_vector = feature_matrix
+        except InsufficientDataError as ide:
+            # Insufficient historical data — return a clean INSUFFICIENT_DATA response
+            # immediately without entering the threshold/risk-analysis block below.
+            return {
+                "predicted_value": 0.0,
+                "confidence": 0.0,
+                "failure_probability": 0.0,
+                "risk_level": "low",
+                "risk_factors": [],
+                "recommended_action": "Insufficient historical data for a reliable prediction",
+                "model_metrics": {"error": str(ide)},
+                "status": "INSUFFICIENT_DATA",
+                "prediction_source": "none",
+                "historical_metrics": [],
+                "feature_vector": [],
+            }
+        except Exception as e:
+            # Fallback to stochastic prediction if model fails for an unexpected reason
+            base_cpu = 35 + (random.random() * 30)  # 35-65% base range
+            trend_per_hour = 1 + (random.random() * 4)  # 1-5% increase per hour
+            predicted_cpu = min(95, base_cpu + (trend_per_hour * horizon / 60))
+            metrics = {}
+            status = "ERROR"
+            prediction_source = "fallback"
+            historical_metrics = []
+            feature_vector = []
+
+        # --- Risk analysis block (only reached when predicted_cpu is a valid float) ---
         if self.llm:
             try:
                 prompt = ChatPromptTemplate.from_messages([
                     ("system", "You are an infrastructure analysis expert. Analyze CPU trends and provide risk assessment."),
-                    ("user", f"Current CPU: {base_cpu:.1f}%, Trend: +{trend_per_hour:.1f}%/hour, Horizon: {horizon}min. Assess failure risk and provide factors."),
+                    ("user", f"Current predicted CPU: {predicted_cpu:.1f}%, Horizon: {horizon}min. Assess failure risk and provide factors."),
                 ])
                 parser = JsonOutputParser()
                 chain = prompt | self.llm | parser
                 ai_analysis = await chain.ainvoke({})
                 risk_factors = ai_analysis.get("factors", [])
-            except:
+            except Exception:
                 risk_factors = ["CPU utilization trending upward", "Peak traffic period approaching", "Background processes increasing load"]
         else:
             risk_factors = ["CPU utilization trending upward", "Peak traffic period approaching", "Background processes increasing load"]
-        
+
         # Calculate failure probability
         if predicted_cpu > 85:
-            failure_prob = 0.4 + ((predicted_cpu - 85) / 15) * 0.4  # 40-80% risk when >85%
+            failure_prob = 0.4 + ((predicted_cpu - 85) / 15) * 0.4
         elif predicted_cpu > 70:
-            failure_prob = 0.15 + ((predicted_cpu - 70) / 15) * 0.25  # 15-40% risk when 70-85%
+            failure_prob = 0.15 + ((predicted_cpu - 70) / 15) * 0.25
         else:
-            failure_prob = predicted_cpu / 100 * 0.15  # Up to 15% risk below 70%
-        
+            failure_prob = predicted_cpu / 100 * 0.15
+
         # Determine risk level and recommendations
         if predicted_cpu > 90:
             risk_level = "critical"
@@ -83,9 +119,8 @@ class PredictionAgent(BaseAgent):
         else:
             risk_level = "low"
             recommended_action = "No immediate action required - continue monitoring"
-        
-        confidence = 0.75 + (random.random() * 0.15)  # 75-90% confidence
-        
+
+        confidence = 0.75 + (random.random() * 0.15)  # retain confidence range
         return {
             "predicted_value": round(predicted_cpu, 1),
             "confidence": round(confidence, 2),
@@ -93,35 +128,69 @@ class PredictionAgent(BaseAgent):
             "risk_level": risk_level,
             "risk_factors": risk_factors[:4],
             "recommended_action": recommended_action,
+            "model_metrics": metrics,
+            "status": status,
+            "prediction_source": prediction_source,
+            "historical_metrics": historical_metrics,
+            "feature_vector": feature_vector,
         }
     
     async def _predict_memory(self, service_id: str, horizon: int) -> Dict[str, Any]:
-        """Predict memory usage"""
-        # Base memory usage with realistic values
-        base_mem = 45 + (random.random() * 25)  # 45-70% base range
-        
-        # Memory tends to have slower growth than CPU but can spike
-        trend_per_hour = 0.5 + (random.random() * 2.5)  # 0.5-3% increase per hour
-        predicted_mem = min(95, base_mem + (trend_per_hour * horizon / 60))
-        
-        # Memory-specific risk factors
+        """Predict memory usage using ML model if possible"""
+        InsufficientDataError = _get_insufficient_data_error_class()
+        try:
+            from app.services.model_manager import predict_memory
+            predicted_mem, metrics, feature_matrix, raw_values = predict_memory(service_id, horizon)
+            status = "SUCCESS"
+            prediction_source = "model"
+            historical_metrics = raw_values
+            feature_vector = feature_matrix
+            trend_per_hour = 0.0
+        except InsufficientDataError as ide:
+            # Insufficient historical data — return a clean INSUFFICIENT_DATA response
+            # immediately without entering the threshold/risk-analysis block below.
+            return {
+                "predicted_value": 0.0,
+                "confidence": 0.0,
+                "failure_probability": 0.0,
+                "risk_level": "low",
+                "risk_factors": [],
+                "recommended_action": "Insufficient historical data for a reliable prediction",
+                "model_metrics": {"error": str(ide)},
+                "status": "INSUFFICIENT_DATA",
+                "prediction_source": "none",
+                "historical_metrics": [],
+                "feature_vector": [],
+            }
+        except Exception as e:
+            # Fallback to stochastic prediction if model fails for an unexpected reason
+            base_mem = 45 + (random.random() * 25)  # 45-70% base range
+            trend_per_hour = 0.5 + (random.random() * 2.5)  # 0.5-3% increase per hour
+            predicted_mem = min(95, base_mem + (trend_per_hour * horizon / 60))
+            metrics = {}
+            status = "ERROR"
+            prediction_source = "fallback"
+            historical_metrics = []
+            feature_vector = []
+
+        # --- Risk analysis block (only reached when predicted_mem is a valid float) ---
         risk_factors = []
         if predicted_mem > 80:
-            risk_factors.append("Memory pressure approaching critical threshold") 
+            risk_factors.append("Memory pressure approaching critical threshold")
         if trend_per_hour > 2:
             risk_factors.append("Rapid memory growth pattern detected")
         risk_factors.extend(["GC frequency increasing", "Heap fragmentation detected"])
-        
+
         # Calculate failure probability for memory
         if predicted_mem > 90:
-            failure_prob = 0.6 + ((predicted_mem - 90) / 10) * 0.3  # 60-90% risk when >90%
+            failure_prob = 0.6 + ((predicted_mem - 90) / 10) * 0.3
         elif predicted_mem > 80:
-            failure_prob = 0.25 + ((predicted_mem - 80) / 10) * 0.35  # 25-60% risk when 80-90%
+            failure_prob = 0.25 + ((predicted_mem - 80) / 10) * 0.35
         elif predicted_mem > 70:
-            failure_prob = 0.1 + ((predicted_mem - 70) / 10) * 0.15  # 10-25% risk when 70-80%
+            failure_prob = 0.1 + ((predicted_mem - 70) / 10) * 0.15
         else:
-            failure_prob = predicted_mem / 100 * 0.1  # Up to 10% risk below 70%
-        
+            failure_prob = predicted_mem / 100 * 0.1
+
         # Determine risk level and recommendations
         if predicted_mem > 90:
             risk_level = "critical"
@@ -135,9 +204,8 @@ class PredictionAgent(BaseAgent):
         else:
             risk_level = "low"
             recommended_action = "Continue monitoring memory trends"
-        
+
         confidence = 0.78 + (random.random() * 0.15)  # 78-93% confidence
-        
         return {
             "predicted_value": round(predicted_mem, 1),
             "confidence": round(confidence, 2),
@@ -145,6 +213,11 @@ class PredictionAgent(BaseAgent):
             "risk_level": risk_level,
             "risk_factors": risk_factors[:4],
             "recommended_action": recommended_action,
+            "model_metrics": metrics,
+            "status": status,
+            "prediction_source": prediction_source,
+            "historical_metrics": historical_metrics,
+            "feature_vector": feature_vector,
         }
     
     async def _predict_failure(self, service_id: str, horizon: int, state: Dict[str, Any]) -> Dict[str, Any]:
@@ -182,9 +255,7 @@ class PredictionAgent(BaseAgent):
         time_factor = min(horizon / 1440, 1.0) * 0.2  # Max 20% additional risk for 24h+ horizon
         base_risk += time_factor
         
-        # Add small random variation to simulate uncertainty
-        uncertainty = (random.random() - 0.5) * 0.1  # ±5% uncertainty
-        failure_prob = max(0.01, min(0.95, base_risk + uncertainty))
+        failure_prob = max(0.01, min(0.95, base_risk))
         
         # Build risk factors based on actual conditions
         risk_factors = []
@@ -232,4 +303,9 @@ class PredictionAgent(BaseAgent):
             "risk_level": risk_level,
             "risk_factors": risk_factors[:5],  # Limit to top 5 factors
             "recommended_action": recommended_action,
+            "status": "SUCCESS",
+            "prediction_source": "heuristic",
+            "historical_metrics": [],
+            "feature_vector": [],
+            "model_metrics": {},
         }

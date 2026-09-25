@@ -7,9 +7,8 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Select } from '@/components/common/Input';
 import { LoadingState } from '@/components/common/LoadingState';
-import { EmptyState } from '@/components/common/ErrorState';
+import { EmptyState, ErrorState } from '@/components/common/ErrorState';
 import { MetricChart } from '@/components/common/MetricChart';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { formatRelativeTime, formatPercent, formatConfidence } from '@/utils/format';
 import { getRiskColor } from '@/utils/statusHelpers';
@@ -23,26 +22,32 @@ const PRED_TYPES = [
 
 export function PredictionPage() {
   const { items: infraItems } = useInfrastructure();
-  const { results, isLoading, error, predictCpu, predictMemory, predictFailure } = usePredictions();
+  const { results, isLoading, error: predictionError, predictCpu, predictMemory, predictFailure } = usePredictions();
   const [serviceId, setServiceId] = useState('');
   const [predType, setPredType] = useState<'cpu' | 'memory' | 'failure'>('failure');
+  const [horizon, setHorizon] = useState(360);
   const [selected, setSelected] = useState<PredictionResult | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
 
   const handleRun = async () => {
     const id = serviceId || infraItems[0]?.id;
     if (!id) return;
-    const req = { service_id: id };
-    let result: PredictionResult;
-    if (predType === 'cpu') result = await predictCpu(req);
-    else if (predType === 'memory') result = await predictMemory(req);
-    else result = await predictFailure(req);
-    setSelected(result);
+    setRunError(null);
+    const req = { service_id: id, horizon_minutes: horizon };
+    try {
+      let result: PredictionResult;
+      if (predType === 'cpu') result = await predictCpu(req);
+      else if (predType === 'memory') result = await predictMemory(req);
+      else result = await predictFailure(req);
+      setSelected(result);
+    } catch (err) {
+      setRunError(err instanceof Error ? err.message : 'Unable to run prediction');
+    }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <MockDataBanner feature="AI predictions" apiEndpoint="POST /api/predict/{cpu|memory|failure}" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 380px) 1fr', gap: 'var(--space-5)', alignItems: 'start' }}>
@@ -62,8 +67,20 @@ export function PredictionPage() {
               value={predType}
               onChange={(e) => setPredType(e.target.value as typeof predType)}
             />
+            <Select
+              label="Forecast Horizon"
+              options={[
+                { value: '30', label: '30 minutes' },
+                { value: '60', label: '1 hour' },
+                { value: '360', label: '6 hours' },
+                { value: '720', label: '12 hours' },
+                { value: '1440', label: '24 hours' },
+              ]}
+              value={String(horizon)}
+              onChange={(e) => setHorizon(Number(e.target.value))}
+            />
             <div style={{ padding: 'var(--space-3)', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-              Horizon: <strong style={{ color: 'var(--color-text-secondary)' }}>6 hours</strong> · Model: <strong style={{ color: 'var(--color-text-secondary)' }}>XGBoost + Prophet</strong>
+              The selected horizon is sent to the live prediction API. Results include the model source and quality metrics.
             </div>
             <Button
               variant="primary"
@@ -109,7 +126,9 @@ export function PredictionPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {isLoading && <LoadingState message="Running AI prediction..." />}
 
-          {!isLoading && !selected && (
+          {!isLoading && (runError || predictionError) && <ErrorState message={runError || predictionError || 'Unable to run prediction'} onRetry={handleRun} />}
+
+          {!isLoading && !runError && !predictionError && !selected && (
             <EmptyState
               title="No prediction results yet"
               description="Select a service and prediction type, then click Run Prediction."
@@ -117,7 +136,21 @@ export function PredictionPage() {
             />
           )}
 
-          {selected && !isLoading && (
+          {selected && !isLoading && !runError && !predictionError && selected.status === 'INSUFFICIENT_DATA' && (
+            <Card>
+              <EmptyState
+                title="Not enough historical data"
+                description={selected.recommended_action || 'This service does not have enough history for a reliable prediction yet.'}
+                icon={<Clock size={48} />}
+              />
+            </Card>
+          )}
+
+          {selected && !isLoading && !runError && !predictionError && selected.status === 'ERROR' && (
+            <ErrorState message={selected.recommended_action || 'The prediction service could not produce a model result.'} onRetry={handleRun} />
+          )}
+
+          {selected && !isLoading && !runError && !predictionError && selected.status === 'SUCCESS' && (
             <>
               {/* Risk card */}
               <Card style={{ border: `1px solid ${getRiskColor(selected.risk_level)}40` }}>
@@ -142,8 +175,19 @@ export function PredictionPage() {
 
               {/* Chart */}
               <Card>
-                <CardHeader title={`${selected.prediction_type.toUpperCase()} Forecast`} subtitle={`Next ${selected.horizon_minutes / 60}h prediction`} icon={<TrendingUp size={16} />} />
+                <CardHeader title={`${selected.prediction_type.toUpperCase()} Forecast`} subtitle={`Next ${selected.horizon_minutes >= 60 ? `${selected.horizon_minutes / 60}h` : `${selected.horizon_minutes}m`} · ${formatRelativeTime(selected.created_at)}`} icon={<TrendingUp size={16} />} />
                 <MetricChart data={selected.data_points} color={getRiskColor(selected.risk_level)} height={200} type="area" />
+              </Card>
+
+              <Card>
+                <CardHeader title="Prediction Details" icon={<Clock size={16} />} />
+                <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+                  <Badge variant="info">Source: {selected.prediction_source}</Badge>
+                  <Badge variant="muted">Generated {new Date(selected.created_at).toLocaleString()}</Badge>
+                  {Object.entries(selected.model_metrics).map(([key, value]) => (
+                    <Badge key={key} variant="muted">{key}: {typeof value === 'number' ? value.toFixed(3) : String(value)}</Badge>
+                  ))}
+                </div>
               </Card>
 
               {/* Factors + Action */}

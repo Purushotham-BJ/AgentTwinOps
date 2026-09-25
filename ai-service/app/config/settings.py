@@ -45,9 +45,9 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
-    @property
-    def is_development(self) -> bool:
-        return self.AI_SERVICE_ENV == "development"
+    # Prediction Config
+    PREDICTION_HORIZON_MINUTES: int = 60  # default horizon in minutes
+    PREDICTION_MIN_HISTORY: int = 30  # minimum number of metric records required
 
-
+    # Existing fields continue unchanged
 settings = Settings()

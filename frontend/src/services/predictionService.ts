@@ -1,6 +1,6 @@
 /**
  * predictionService — AI prediction interface.
- * Connected to AI Service (LangGraph multi-agent system)
+ * Connected to the AI service prediction endpoints.
  */
 import axios from 'axios';
 import type { PredictionResult, PredictionRequest } from '@/types';
