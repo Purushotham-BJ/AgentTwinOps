@@ -58,6 +58,24 @@ export function OperationsPage() {
             {result.recovery_actions.map((item, index) => <div key={`${item.action}-${index}`} style={{ padding: 'var(--space-2)', color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>Proposal: {item.action} (human approval required)</div>)}
             {!result.recommendations.length && !result.recovery_actions.length && <p style={{ color: 'var(--color-text-muted)' }}>No operational action required.</p>}
           </Card>
+          <Card>
+            <CardHeader title="Predictions" />
+            {Object.entries(result.predictions).map(([name, prediction]) => (
+              <div key={name} style={{ padding: 'var(--space-2)', color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
+                <strong>{name}</strong>: {String(prediction.status ?? 'available')} · failure probability {Number(prediction.failure_probability ?? 0).toFixed(2)}
+              </div>
+            ))}
+            {!Object.keys(result.predictions).length && <p style={{ color: 'var(--color-text-muted)' }}>No prediction output.</p>}
+          </Card>
+          <Card>
+            <CardHeader title="Simulation" subtitle="SIMULATED ONLY" />
+            {result.simulations.map((simulation, index) => (
+              <div key={index} style={{ padding: 'var(--space-2)', color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
+                Simulated operational status: {String(simulation.simulated_operational_status ?? 'available')} · health {String(simulation.simulated_health_score ?? '—')}
+              </div>
+            ))}
+            {!result.simulations.length && <p style={{ color: 'var(--color-text-muted)' }}>Simulation skipped for the current operational status.</p>}
+          </Card>
         </>
       )}
     </div>

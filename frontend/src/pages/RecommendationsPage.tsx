@@ -9,7 +9,6 @@ import { Badge } from '@/components/common/Badge';
 import { Select } from '@/components/common/Input';
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/ErrorState';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { formatRelativeTime } from '@/utils/format';
 import { getSeverityColor, getRiskColor } from '@/utils/statusHelpers';
 import type { Recommendation, RecommendationPriority } from '@/types';
@@ -42,7 +41,7 @@ export function RecommendationsPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-        <MockDataBanner feature="AI recommendations" apiEndpoint="GET /api/recommendations" />
+        <Badge variant="info">Deterministic recommendations from live operational state</Badge>
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
           <Select options={[{ value: '', label: 'All services' }, ...infra.map((item) => ({ value: item.id, label: item.service_name }))]} value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} style={{ width: '170px' }} />
           <Select options={[{ value: '', label: 'All priorities' }, ...(['critical','high','medium','low'].map(p => ({ value: p, label: p.charAt(0).toUpperCase()+p.slice(1) })))]} value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={{ width: '150px' }} />

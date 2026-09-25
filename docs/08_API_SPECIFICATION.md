@@ -109,6 +109,14 @@ proposal-only recovery actions, and isolated errors. Unknown services return
 `404`; missing authentication returns `401`. The workflow does not mutate
 infrastructure, metrics, `Twin.current_state`, or `Twin.predicted_state`.
 
+## Frontend integration
+
+The frontend uses the authenticated backend metrics and Twin APIs for Metrics,
+Dashboard, and Digital Twin views. Prediction, recommendation, simulation, and
+Operations requests forward the stored bearer token to the AI service. A 401
+response clears the session and redirects through the protected-route login
+flow.
+
 ---
 
 # Incident APIs

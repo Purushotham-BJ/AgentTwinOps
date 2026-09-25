@@ -13,7 +13,6 @@ import { Badge } from '@/components/common/Badge';
 import { LoadingState } from '@/components/common/LoadingState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { MetricChart } from '@/components/common/MetricChart';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { formatRelativeTime, formatPercent, formatRiskScore } from '@/utils/format';
 import { getSeverityColor, getSeverityBg, getResolutionColor, getResolutionBg } from '@/utils/statusHelpers';
@@ -33,7 +32,7 @@ function getStatusBadgeVariant(status: InfrastructureStatus) {
 export function DashboardPage() {
   const infra = useInfrastructure();
   const incidents = useIncidents();
-  const { metrics, isLoading: metricsLoading, lastUpdated, refetch: refetchMetrics } = useMetrics();
+  const { metrics, isLoading: metricsLoading, error: metricsError, lastUpdated, refetch: refetchMetrics } = useMetrics();
 
   const summary = useMemo(() => {
     if (infra.isLoading || incidents.isLoading) return null;
@@ -50,10 +49,10 @@ export function DashboardPage() {
   const criticalServices = infra.items.filter((s) => s.status === 'unhealthy' || s.status === 'degraded').slice(0, 5);
 
   const isLoading = infra.isLoading || incidents.isLoading;
-  const hasError = infra.error || incidents.error;
+  const hasError = infra.error || incidents.error || metricsError;
 
   if (hasError) {
-    return <ErrorState message={infra.error || incidents.error || 'Failed to load dashboard'} onRetry={() => { infra.refetch(); incidents.refetch(); }} />;
+    return <ErrorState message={infra.error || incidents.error || metricsError || 'Failed to load dashboard'} onRetry={() => { infra.refetch(); incidents.refetch(); refetchMetrics(); }} />;
   }
 
   return (
@@ -67,7 +66,6 @@ export function DashboardPage() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-          <MockDataBanner feature="Metrics, Risk Score" apiEndpoint="GET /api/v1/metrics" />
           {lastUpdated && (
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Clock size={12} />
@@ -133,7 +131,7 @@ export function DashboardPage() {
             />
             <StatCard
               title="Failure Risk"
-              value={`${summary?.failure_risk ?? 0}%`}
+              value={summary ? `${summary.failure_risk}%` : '--'}
               subtitle={formatRiskScore(summary?.failure_risk ?? 0).label}
               icon={ShieldAlert}
               iconColor={getRiskIconColor(summary?.failure_risk ?? 0)}
@@ -142,7 +140,7 @@ export function DashboardPage() {
             />
             <StatCard
               title="Recommendations"
-              value={summary?.active_recommendations ?? 0}
+              value={summary ? summary.active_recommendations : '--'}
               subtitle="AI-generated actions"
               icon={Lightbulb}
               iconColor="var(--color-yellow-300)"
@@ -150,8 +148,8 @@ export function DashboardPage() {
             />
             <StatCard
               title="System Status"
-              value={summary && summary.unhealthy_services === 0 ? 'Healthy' : 'Degraded'}
-              subtitle="Overall platform state"
+              value={summary ? (summary.unhealthy_services === 0 ? 'Healthy' : 'Degraded') : '--'}
+              subtitle={summary ? 'Overall platform state' : 'Unavailable'}
               icon={CheckCircle}
               iconColor={summary && summary.unhealthy_services === 0 ? 'var(--color-green-400)' : 'var(--color-orange-300)'}
               iconBg={summary && summary.unhealthy_services === 0 ? 'rgba(63,185,80,0.1)' : 'rgba(255,166,87,0.1)'}

@@ -6,16 +6,15 @@ import { Card, CardHeader } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/common/Input';
 import { LoadingState } from '@/components/common/LoadingState';
-import { EmptyState } from '@/components/common/ErrorState';
+import { EmptyState, ErrorState } from '@/components/common/ErrorState';
 import { MetricChart } from '@/components/common/MetricChart';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { useMetrics } from '@/hooks/useMetrics';
 import { formatRelativeTime } from '@/utils/format';
 import type { ServiceMetrics } from '@/types';
 
 export function MetricsPage() {
   const { items: infra } = useInfrastructure();
-  const { metrics: dashMetrics, isLoading: dashLoading, lastUpdated, refetch } = useMetrics();
+  const { metrics: dashMetrics, isLoading: dashLoading, error: dashError, lastUpdated, refetch } = useMetrics();
   const [serviceId, setServiceId] = useState('');
   const [svcMetrics, setSvcMetrics] = useState<ServiceMetrics | null>(null);
   const [loadingSvc, setLoadingSvc] = useState(false);
@@ -33,7 +32,6 @@ export function MetricsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-        <MockDataBanner feature="All metrics data" apiEndpoint="GET /api/v1/metrics" />
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
           {lastUpdated && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>Updated {lastUpdated.toLocaleTimeString()}</span>}
           <Button variant="ghost" size="sm" onClick={refetch} leftIcon={<RefreshCw size={14} />}>Refresh</Button>
@@ -42,7 +40,7 @@ export function MetricsPage() {
 
       {/* Platform-wide charts */}
       <h3 style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)', margin: 0 }}>Platform Overview</h3>
-      {dashLoading ? <LoadingState message="Loading metrics..." /> : (
+      {dashLoading ? <LoadingState message="Loading metrics..." /> : dashError ? <ErrorState message={dashError} onRetry={refetch} /> : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-4)' }}>
           <Card><CardHeader title="CPU Usage" icon={<Cpu size={16} />} subtitle="24h trend" />
             {dashMetrics && <MetricChart data={dashMetrics.cpu} color="var(--color-cyan-400)" height={180} />}

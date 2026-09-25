@@ -5,7 +5,6 @@ import { useIncidents } from '@/hooks/useIncidents';
 import { Card, CardHeader } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatDate, formatDateTime } from '@/utils/format';
 
@@ -21,22 +20,13 @@ const REPORT_CONFIGS = [
 export function ReportsPage() {
   const { items: infra, isLoading: infraLoading } = useInfrastructure();
   const { items: incidents, isLoading: incLoading } = useIncidents();
-  const [generating, setGenerating] = useState<ReportType | null>(null);
-  const [generated, setGenerated] = useState<ReportType[]>([]);
-
-  const handleGenerate = async (type: ReportType) => {
-    setGenerating(type);
-    await new Promise((r) => setTimeout(r, 1500));
-    setGenerating(null);
-    setGenerated((prev) => [...prev.filter((t) => t !== type), type]);
-  };
 
   if (infraLoading || incLoading) return <LoadingState message="Loading report data..." />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <MockDataBanner feature="Prediction & Simulation reports" apiEndpoint="GET /api/reports" />
+        <Badge variant="muted">Report export API is not available</Badge>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
           <Calendar size={12} />Report date: {formatDate(new Date().toISOString())}
         </div>
@@ -55,18 +45,8 @@ export function ReportsPage() {
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0 }}>{description}</p>
               </div>
             </div>
-            {generated.includes(type) && (
-              <Badge variant="success" style={{ marginBottom: 'var(--space-3)' }}>Ready to download</Badge>
-            )}
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <Button variant="primary" size="sm" onClick={() => handleGenerate(type)} isLoading={generating === type} leftIcon={<FileText size={13} />} style={{ flex: 1 }}>
-                Generate
-              </Button>
-              {generated.includes(type) && (
-                <Button variant="secondary" size="sm" leftIcon={<Download size={13} />} onClick={() => alert(`Downloading ${title}... (backend PDF export pending)`)}>
-                  Export
-                </Button>
-              )}
+              <Button variant="secondary" size="sm" disabled leftIcon={<Download size={13} />} style={{ flex: 1 }}>Export unavailable</Button>
             </div>
           </Card>
         ))}

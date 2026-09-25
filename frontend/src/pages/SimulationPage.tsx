@@ -9,7 +9,6 @@ import { Select } from '@/components/common/Input';
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/ErrorState';
 import { MetricChart } from '@/components/common/MetricChart';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { formatPercent } from '@/utils/format';
 import { getRiskColor } from '@/utils/statusHelpers';
@@ -52,7 +51,7 @@ export function SimulationPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <MockDataBanner feature="Simulation engine" apiEndpoint="POST /api/simulate/{scenario}" />
+        <Badge variant="info">SIMULATED ONLY — no production state is changed</Badge>
       </div>
 
       {/* Scenario selection */}

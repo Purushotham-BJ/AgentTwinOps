@@ -2,16 +2,8 @@
  * predictionService — AI prediction interface.
  * Connected to the AI service prediction endpoints.
  */
-import axios from 'axios';
 import type { PredictionResult, PredictionRequest } from '@/types';
-
-const AI_API_BASE = import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001';
-
-const aiClient = axios.create({
-  baseURL: AI_API_BASE,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
-});
+import aiClient from './aiClient';
 
 export const predictionService = {
   /**
