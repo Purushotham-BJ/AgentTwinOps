@@ -50,12 +50,12 @@ class BackendClient:
             headers["Authorization"] = f"Bearer {self.token}"
         return headers
 
-    async def _get_headers_async(self) -> Dict[str, str]:
+    async def _get_headers_async(self, token_override: str | None = None) -> Dict[str, str]:
         """Get request headers with authentication (async version with token refresh)"""
         headers = {"Content-Type": "application/json"}
-        token = await self._get_service_token()
+        token = token_override or await self._get_service_token()
         if token:
-            headers["Authorization"] = f"Bearer {token}"
+            headers["Authorization"] = token if token.startswith("Bearer ") else f"Bearer {token}"
         return headers
 
     async def get_infrastructure(self) -> List[Dict[str, Any]]:
@@ -81,11 +81,13 @@ class BackendClient:
                 # Development fallback
                 return self._mock_infrastructure()
 
-    async def get_infrastructure_by_id(self, service_id: str) -> Dict[str, Any] | None:
+    async def get_infrastructure_by_id(
+        self, service_id: str, auth_token: str | None = None
+    ) -> Dict[str, Any] | None:
         """Fetch specific infrastructure service"""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                headers = await self._get_headers_async()
+                headers = await self._get_headers_async(auth_token)
                 response = await client.get(
                     f"{self.base_url}/api/v1/infrastructure/{service_id}",
                     headers=headers
@@ -122,11 +124,13 @@ class BackendClient:
                 # Development fallback
                 return self._mock_incidents()
 
-    def get_metrics(self, service_id: str, limit: int = 200) -> List[Dict[str, Any]]:
+    def get_metrics(
+        self, service_id: str, limit: int = 200, auth_token: str | None = None
+    ) -> List[Dict[str, Any]]:
         """Fetch historical metrics for a specific service (Synchronous)"""
         with httpx.Client(timeout=self.timeout) as client:
             try:
-                token = self._cached_token or self.token
+                token = auth_token or self._cached_token or self.token
                 if not token:
                     service_email = settings.BACKEND_SERVICE_EMAIL if hasattr(settings, 'BACKEND_SERVICE_EMAIL') else None
                     service_password = settings.BACKEND_SERVICE_PASSWORD if hasattr(settings, 'BACKEND_SERVICE_PASSWORD') else None
@@ -145,7 +149,7 @@ class BackendClient:
 
                 headers = {"Content-Type": "application/json"}
                 if token:
-                    headers["Authorization"] = f"Bearer {token}"
+                    headers["Authorization"] = token if token.startswith("Bearer ") else f"Bearer {token}"
 
                 response = client.get(
                     f"{self.base_url}/api/v1/metrics/service/{service_id}?limit={limit}",

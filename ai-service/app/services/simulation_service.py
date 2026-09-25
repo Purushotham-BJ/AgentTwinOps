@@ -12,11 +12,11 @@ class SimulationService:
     def __init__(self) -> None:
         self.simulation_agent = SimulationAgent()
 
-    async def _baseline(self, service_id: str) -> dict:
-        service = await backend_client.get_infrastructure_by_id(service_id)
+    async def _baseline(self, service_id: str, auth_token: str | None) -> dict:
+        service = await backend_client.get_infrastructure_by_id(service_id, auth_token)
         if not service:
             raise ValueError("Infrastructure service not found")
-        metrics = backend_client.get_metrics(service_id, limit=1)
+        metrics = backend_client.get_metrics(service_id, limit=1, auth_token=auth_token)
         latest = metrics[-1] if metrics else {}
         return {
             "service_id": service_id,
@@ -28,9 +28,14 @@ class SimulationService:
         }
 
     async def simulate(
-        self, scenario: str, service_id: str, parameters: dict, horizon_minutes: int = 60
+        self,
+        scenario: str,
+        service_id: str,
+        parameters: dict,
+        horizon_minutes: int = 60,
+        auth_token: str | None = None,
     ) -> SimulationResult:
-        baseline = await self._baseline(service_id)
+        baseline = await self._baseline(service_id, auth_token)
         changes = dict(parameters or {})
         calculation = self.simulation_agent.simulate(baseline, scenario, changes)
         created_at = datetime.now()

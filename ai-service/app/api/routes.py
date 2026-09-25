@@ -1,5 +1,5 @@
 """AI Service API Routes"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from typing import List
 from app.schemas.prediction import PredictionRequest, PredictionResponse
 from app.schemas.simulation import SimulationRequest, SimulationResponse
@@ -48,7 +48,10 @@ async def predict_failure(request: PredictionRequest):
 
 
 @router.post("/simulate", response_model=SimulationResponse)
-async def simulate_scenario(request: SimulationRequest):
+async def simulate_scenario(
+    request: SimulationRequest,
+    authorization: str | None = Header(default=None),
+):
     """Run simulation scenario"""
     try:
         result = await simulation_service.simulate(
@@ -56,6 +59,7 @@ async def simulate_scenario(request: SimulationRequest):
             service_id=request.service_id,
             parameters=request.parameters,
             horizon_minutes=request.horizon_minutes,
+            auth_token=authorization,
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
