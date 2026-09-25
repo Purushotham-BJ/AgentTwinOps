@@ -19,6 +19,10 @@ export function LoginPage() {
 
   const [form, setForm] = useState({ name: '', email: '', password: '' });
 
+  const startOAuth = (provider: 'google' | 'github') => {
+    window.location.assign(`/api/v1/auth/oauth/${provider}/login`);
+  };
+
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard', { replace: true });
   }, [isAuthenticated, navigate]);
@@ -173,6 +177,21 @@ export function LoginPage() {
               {mode === 'login' ? 'Sign In' : 'Create Account'}
             </Button>
           </form>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', margin: 'var(--space-5) 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+            <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>OR CONTINUE WITH</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            {(['google', 'github'] as const).map((provider) => (
+              <button key={provider} type="button" onClick={() => startOAuth(provider)} style={{
+                padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-elevated)', color: 'var(--color-text-primary)', cursor: 'pointer',
+              }}>
+                {provider === 'google' ? 'Google' : 'GitHub'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--color-text-disabled)', marginTop: 'var(--space-5)' }}>

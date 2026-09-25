@@ -30,3 +30,13 @@ class ProfileResponse(BaseModel):
     role: str
     created_at: datetime
     updated_at: datetime
+
+
+class OAuthProviderResponse(BaseModel):
+    provider: str
+    connected: bool
+    provider_email: Optional[EmailStr] = None
+
+
+class OAuthProvidersResponse(BaseModel):
+    providers: list[OAuthProviderResponse]

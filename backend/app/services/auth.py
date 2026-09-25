@@ -35,7 +35,7 @@ class AuthService:
         user = await self.user_repo.get_by_email(email)
         if not user:
             return None
-        if not verify_password(password, user.password):
+        if not user.password or not verify_password(password, user.password):
             return None
         token = create_access_token(user.id)
         return token

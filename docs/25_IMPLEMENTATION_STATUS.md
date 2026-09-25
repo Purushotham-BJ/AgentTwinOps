@@ -14,6 +14,12 @@
 - Fixed components: Removed root `__init__.py` to fix module import resolution during tests. Added curl to base image for health checks.
 
 ## Authentication
+
+- Email/password authentication remains supported.
+- Optional Google/GitHub OAuth is implemented with signed state validation,
+  server-side code exchange, verified-email linking, and normalized provider
+  identities. Provider credentials are deployment configuration; provider E2E
+  requires configured console applications.
 - Registration: Verified via API end-to-end.
 - Login: Verified via API end-to-end.
 - JWT: Generation and enforcement verified via API.

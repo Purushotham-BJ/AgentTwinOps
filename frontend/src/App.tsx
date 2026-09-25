@@ -15,6 +15,7 @@ import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { MetricsPage } from '@/pages/MetricsPage';
 import { OperationsPage } from '@/pages/OperationsPage';
+import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Routes>
           {/* Public */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
           {/* Protected application */}
           <Route

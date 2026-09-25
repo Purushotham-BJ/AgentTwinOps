@@ -12,6 +12,21 @@ POST /api/auth/register
 
 GET /api/auth/profile
 
+GET /api/v1/auth/oauth/{provider}/login
+
+GET /api/v1/auth/oauth/{provider}/callback
+
+GET /api/v1/auth/oauth/{provider}/start
+
+GET /api/v1/auth/oauth/providers
+
+OAuth providers are `google` and `github`. Login and callback perform the
+provider code exchange server-side, validate a signed expiring `state`, and
+return an AgentTwinOps JWT through the frontend callback fragment. Provider
+tokens are never returned. The `start` endpoint is authenticated and links a
+verified provider identity to the current account. Missing provider
+configuration returns `503` without affecting password authentication.
+
 ---
 
 # Infrastructure APIs

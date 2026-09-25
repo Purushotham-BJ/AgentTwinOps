@@ -69,6 +69,16 @@ class BaseConfig(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # ── OAuth ──────────────────────────────────────────────────
+    FRONTEND_URL: str = "http://localhost:5173"
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: SecretStr = Field(default=SecretStr(""))
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/oauth/google/callback"
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: SecretStr = Field(default=SecretStr(""))
+    GITHUB_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/oauth/github/callback"
+    OAUTH_STATE_TTL_SECONDS: int = 600
+
     # ── Paths ───────────────────────────────────────────────────
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 

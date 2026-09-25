@@ -50,6 +50,9 @@ docker compose logs -f ai-service
 ### Database Configuration
 - The backend connects to the database via the internal compose DNS: `postgres:5432`
 - Credentials are provided via environment variables in `docker-compose.yml`.
+- Optional OAuth variables (`FRONTEND_URL`, provider client IDs/secrets, and
+  redirect URIs) must be supplied through deployment secrets; do not commit
+  provider credentials. See `docs/27_OAUTH_AUTHENTICATION.md`.
 
 ### Migrations
 To run database migrations after starting the stack:
