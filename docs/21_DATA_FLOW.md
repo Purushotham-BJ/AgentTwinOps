@@ -178,4 +178,13 @@ Digital Twin never directly modifies infrastructure.
 
 Predictions never overwrite real metrics.
 
+## Multi-Agent Operations Flow
+
+Frontend sends a service ID and JWT to the AI orchestration endpoint. The AI
+service forwards that JWT to backend infrastructure, metrics, incident, and
+Twin APIs. The coordinator builds a serializable context, executes agents in
+fixed order, and returns advisory output. Recovery actions are explicitly
+marked `proposal_only` and require human approval. No orchestration stage
+writes operational state.
+
 Simulations always use Twin Objects.

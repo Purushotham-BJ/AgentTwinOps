@@ -27,6 +27,21 @@ Monitoring  Prediction  Simulation  Recovery   Cost Optimization
                   Recommendation Agent
 ```
 
+                  ## Sprint 9 Operations Coordinator
+
+                  `POST /api/v1/agents/orchestrate` runs one deterministic, authenticated
+                  workflow for a real service. It fetches the service, latest metric, Twin, and
+                  associated incidents once, then passes a serializable context through
+                  Monitoring, Prediction, Recommendation, Simulation, and Recovery stages.
+                  Prediction uses the pure Prediction Agent and does not persist Twin state;
+                  simulation is transient; recovery returns proposal-only actions requiring
+                  human approval.
+
+                  Routing is stable: monitoring and recommendation always run, prediction runs
+                  when enabled, simulation runs for WARNING/CRITICAL state, and recovery emits
+                  actions only for non-healthy state. Each stage reports SUCCESS, SKIPPED, or
+                  FAILED and optional failures are isolated.
+
 ---
 
 # Agent 1: Monitoring Agent

@@ -92,6 +92,8 @@ class BackendClient:
                     f"{self.base_url}/api/v1/infrastructure/{service_id}",
                     headers=headers
                 )
+                if response.status_code == 404:
+                    return None
                 response.raise_for_status()
                 data = response.json()
                 return data.get("data")

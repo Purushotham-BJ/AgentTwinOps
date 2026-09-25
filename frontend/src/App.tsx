@@ -14,6 +14,7 @@ import { RecommendationsPage } from '@/pages/RecommendationsPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { MetricsPage } from '@/pages/MetricsPage';
+import { OperationsPage } from '@/pages/OperationsPage';
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="prediction"      element={<PredictionPage />} />
             <Route path="simulation"      element={<SimulationPage />} />
             <Route path="recommendations" element={<RecommendationsPage />} />
+            <Route path="operations"       element={<OperationsPage />} />
             <Route path="metrics"         element={<MetricsPage />} />
             <Route path="reports"         element={<ReportsPage />} />
             <Route path="settings"        element={<SettingsPage />} />

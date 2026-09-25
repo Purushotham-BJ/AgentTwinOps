@@ -4,14 +4,38 @@ from typing import List
 from app.schemas.prediction import PredictionRequest, PredictionResponse
 from app.schemas.simulation import SimulationRequest, SimulationResponse
 from app.schemas.recommendation import RecommendationListResponse, RecommendationGenerateRequest
+from app.schemas.orchestration import OrchestrationRequest, OrchestrationResponse
 from app.schemas.twin import TwinListResponse, TwinResponse
 from app.services.prediction_service import prediction_service
 from app.services.simulation_service import simulation_service
 from app.services.recommendation_service import recommendation_service
 from app.services.twin_service import twin_service
+from app.services.orchestration_service import orchestration_service
 from datetime import datetime
 
 router = APIRouter(prefix="/api/v1", tags=["ai"])
+
+
+@router.post("/agents/orchestrate", response_model=OrchestrationResponse)
+async def orchestrate_agents(
+    request: OrchestrationRequest,
+    authorization: str | None = Header(default=None),
+):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
+    try:
+        return await orchestration_service.orchestrate(
+            service_id=request.service_id,
+            include_prediction=request.include_prediction,
+            include_simulation=request.include_simulation,
+            include_recovery=request.include_recovery,
+            horizon_minutes=request.horizon_minutes,
+            auth_token=authorization,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Agent orchestration unavailable") from exc
 
 
 @router.post("/predict/cpu", response_model=PredictionResponse)

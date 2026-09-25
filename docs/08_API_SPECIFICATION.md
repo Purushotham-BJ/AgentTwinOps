@@ -97,6 +97,18 @@ services; unknown IDs return `404`. Responses include `type`, `priority`,
 `category`, `reason`, `action`, and deterministic `confidence`. No
 recommendation endpoint mutates infrastructure, metrics, or Twin state.
 
+## Multi-Agent Operations API
+
+`POST /api/v1/agents/orchestrate`
+
+The authenticated request accepts a registered `service_id`, optional
+`include_prediction`, `include_simulation`, and `include_recovery` flags, and
+an optional `horizon_minutes`. The response reports agent execution statuses,
+monitoring data, predictions, recommendations, transient simulations,
+proposal-only recovery actions, and isolated errors. Unknown services return
+`404`; missing authentication returns `401`. The workflow does not mutate
+infrastructure, metrics, `Twin.current_state`, or `Twin.predicted_state`.
+
 ---
 
 # Incident APIs

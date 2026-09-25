@@ -270,3 +270,18 @@ export interface DashboardSummary {
   failure_risk: number; // 0-100
   active_recommendations: number;
 }
+
+export interface OrchestrationResult {
+  service_id: string;
+  status: string;
+  operational_status: string;
+  health_score: number;
+  failure_probability: number;
+  agents: { agent: string; status: string; error?: string }[];
+  monitoring: Record<string, unknown>;
+  predictions: Record<string, Record<string, unknown>>;
+  recommendations: Array<{ id: string; title: string; action: string; priority: string }>;
+  simulations: Record<string, unknown>[];
+  recovery_actions: Array<{ action: string; priority: string; requires_human_approval: boolean }>;
+  errors: string[];
+}
