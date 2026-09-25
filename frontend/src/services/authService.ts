@@ -34,7 +34,8 @@ export const authService = {
   },
 
   oauthLoginUrl(provider: 'google' | 'github'): string {
-    return `/api/v1/auth/oauth/${provider}/login`;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    return `${baseUrl}${PREFIX}/oauth/${provider}/login`;
   },
 
   async connectedProviders(): Promise<Array<{ provider: string; connected: boolean; provider_email?: string }>> {

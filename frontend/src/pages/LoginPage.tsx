@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { getErrorMessage } from '@/services/api';
+import { authService } from '@/services/authService';
 
 type Mode = 'login' | 'register';
 
@@ -20,7 +21,7 @@ export function LoginPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
 
   const startOAuth = (provider: 'google' | 'github') => {
-    window.location.assign(`/api/v1/auth/oauth/${provider}/login`);
+    window.location.assign(authService.oauthLoginUrl(provider));
   };
 
   useEffect(() => {
@@ -188,7 +189,7 @@ export function LoginPage() {
                 padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
                 background: 'var(--color-bg-elevated)', color: 'var(--color-text-primary)', cursor: 'pointer',
               }}>
-                {provider === 'google' ? 'Google' : 'GitHub'}
+                {provider === 'google' ? 'Continue with Google' : 'Continue with GitHub'}
               </button>
             ))}
           </div>
