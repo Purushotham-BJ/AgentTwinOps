@@ -39,8 +39,9 @@ class PredictionService:
     async def _monitoring_node(self, state: PredictionState) -> PredictionState:
         """Monitoring analysis node"""
         # Fetch infrastructure data
-        infrastructure = await backend_client.get_infrastructure()
-        incidents = await backend_client.get_incidents()
+        auth_token = state.get("auth_token")
+        infrastructure = await backend_client.get_infrastructure(auth_token=auth_token)
+        incidents = await backend_client.get_incidents(auth_token=auth_token)
 
         # Run monitoring agent
         agent_state = {
@@ -63,12 +64,14 @@ class PredictionService:
         service_id: str,
         prediction_type: str = "failure",
         horizon_minutes: int = 360,
+        auth_token: str | None = None,
     ) -> PredictionResult:
         """Generate prediction for service and, on success, persist predicted_state to the twin."""
 
         # Initialize state
         initial_state: PredictionState = {
             "service_id": service_id,
+            "auth_token": auth_token,
             "prediction_type": prediction_type,
             "horizon_minutes": horizon_minutes,
             "infrastructure_data": [],
@@ -137,7 +140,12 @@ class PredictionService:
         if result.status == "SUCCESS":
             predicted_state = self._build_predicted_state(result, prediction_type, horizon_minutes)
             try:
-                await backend_client.update_twin_predicted_state(service_id, predicted_state)
+                if auth_token:
+                    await backend_client.update_twin_predicted_state(
+                        service_id, predicted_state, auth_token=auth_token
+                    )
+                else:
+                    await backend_client.update_twin_predicted_state(service_id, predicted_state)
                 logger.info(
                     "Twin predicted_state updated for service=%s type=%s",
                     service_id,

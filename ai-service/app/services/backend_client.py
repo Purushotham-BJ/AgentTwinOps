@@ -189,7 +189,10 @@ class BackendClient:
             return response.json()
 
     async def update_twin_predicted_state(
-        self, service_id: str, predicted_state: Dict[str, Any]
+        self,
+        service_id: str,
+        predicted_state: Dict[str, Any],
+        auth_token: str | None = None,
     ) -> Dict[str, Any]:
         """PATCH the twin's predicted_state via the backend API.
 
@@ -198,7 +201,7 @@ class BackendClient:
         Raises an exception on failure so the caller can handle it honestly.
         """
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            headers = await self._get_headers_async()
+            headers = await self._get_headers_async(auth_token)
             response = await client.patch(
                 f"{self.base_url}/api/v1/twins/by-service/{service_id}/predicted-state",
                 headers=headers,

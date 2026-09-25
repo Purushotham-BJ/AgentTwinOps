@@ -5,9 +5,11 @@
 import type { TwinObject, InfrastructureItem, InfrastructureStatus, TwinState } from '@/types';
 import api from './api';
 
+const PREFIX = '/api/v1/twins';
+
 type JsonRecord = Record<string, unknown>;
 
-function mapTwin(raw: JsonRecord): TwinObject {
+function mapTwin(raw: JsonRecord, service?: InfrastructureItem): TwinObject {
   const current = (raw.current_state as JsonRecord | undefined) ?? {};
   const predicted = (raw.predicted_state as JsonRecord | undefined) ?? {};
   const toState = (state: JsonRecord, fallback: TwinState): TwinState => ({
@@ -34,9 +36,9 @@ function mapTwin(raw: JsonRecord): TwinObject {
   });
   return {
     id: String(raw.id),
-    name: String(raw.service_name ?? raw.service_id),
+    name: String(raw.service_name ?? service?.service_name ?? raw.service_id),
     service_id: String(raw.service_id),
-    service_type: String(raw.service_type ?? 'unknown'),
+    service_type: String(raw.service_type ?? service?.service_type ?? 'unknown'),
     current_state: base,
     predicted_state: toState(predicted, base),
     health_score: Number(raw.health_score ?? 0),
@@ -51,8 +53,11 @@ export const twinService = {
    * GET /api/v1/twins
    */
   async getTwins(infrastructure: InfrastructureItem[]): Promise<TwinObject[]> {
-    const response = await api.get('/twins/');
-    return (response.data ?? []).map(mapTwin);
+    const response = await api.get(`${PREFIX}/`);
+    const servicesById = new Map(infrastructure.map((service) => [service.id, service]));
+    return (response.data ?? []).map((raw: JsonRecord) =>
+      mapTwin(raw, servicesById.get(String(raw.service_id)))
+    );
   },
 
   /**
@@ -60,7 +65,7 @@ export const twinService = {
    * GET /api/v1/twins/{twin_id}
    */
   async getTwin(serviceId: string, serviceName: string): Promise<TwinObject> {
-    const response = await api.get(`/twins/by-service/${serviceId}`);
+    const response = await api.get(`${PREFIX}/by-service/${serviceId}`);
     return mapTwin(response.data);
   },
 };

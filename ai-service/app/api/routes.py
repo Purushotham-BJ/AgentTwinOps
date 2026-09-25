@@ -39,34 +39,52 @@ async def orchestrate_agents(
 
 
 @router.post("/predict/cpu", response_model=PredictionResponse)
-async def predict_cpu(request: PredictionRequest):
+async def predict_cpu(
+    request: PredictionRequest,
+    authorization: str | None = Header(default=None),
+):
     """Predict CPU usage for a service"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     result = await prediction_service.predict(
         service_id=request.service_id,
         prediction_type="cpu",
-        horizon_minutes=request.horizon_minutes
+        horizon_minutes=request.horizon_minutes,
+        auth_token=authorization,
     )
     return PredictionResponse(data=result, timestamp=datetime.now())
 
 
 @router.post("/predict/memory", response_model=PredictionResponse)
-async def predict_memory(request: PredictionRequest):
+async def predict_memory(
+    request: PredictionRequest,
+    authorization: str | None = Header(default=None),
+):
     """Predict memory usage for a service"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     result = await prediction_service.predict(
         service_id=request.service_id,
         prediction_type="memory",
-        horizon_minutes=request.horizon_minutes
+        horizon_minutes=request.horizon_minutes,
+        auth_token=authorization,
     )
     return PredictionResponse(data=result, timestamp=datetime.now())
 
 
 @router.post("/predict/failure", response_model=PredictionResponse)
-async def predict_failure(request: PredictionRequest):
+async def predict_failure(
+    request: PredictionRequest,
+    authorization: str | None = Header(default=None),
+):
     """Predict failure probability for a service"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     result = await prediction_service.predict(
         service_id=request.service_id,
         prediction_type="failure",
-        horizon_minutes=request.horizon_minutes
+        horizon_minutes=request.horizon_minutes,
+        auth_token=authorization,
     )
     return PredictionResponse(data=result, timestamp=datetime.now())
 

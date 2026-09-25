@@ -1,6 +1,8 @@
 import api from './api';
 import type { ServiceMetrics, MetricPoint, DashboardSummary } from '@/types';
 
+const PREFIX = '/api/v1/metrics';
+
 interface BackendMetric {
   timestamp: string;
   cpu_usage: number;
@@ -23,7 +25,7 @@ function mapMetrics(items: BackendMetric[], serviceId: string, serviceName: stri
 
 export const metricsService = {
   async getServiceMetrics(serviceId: string, serviceName: string): Promise<ServiceMetrics> {
-    const response = await api.get(`/metrics/service/${serviceId}`, { params: { limit: 100 } });
+    const response = await api.get(`${PREFIX}/service/${serviceId}`, { params: { limit: 100 } });
     return mapMetrics(response.data.items ?? [], serviceId, serviceName);
   },
 
@@ -33,7 +35,7 @@ export const metricsService = {
     latency: MetricPoint[];
     network: MetricPoint[];
   }> {
-    const response = await api.get('/metrics', { params: { limit: 1000 } });
+    const response = await api.get(PREFIX, { params: { limit: 1000 } });
     const items = response.data.items ?? [];
     return {
       cpu: items.map((item: BackendMetric) => ({ timestamp: item.timestamp, value: item.cpu_usage })),
