@@ -43,3 +43,13 @@
 
 ## Containerization
 - Complete. All components mapped and healthy in `docker-compose.yml`.
+## Final verification and deployment readiness
+
+- Fixed frontend backend-API prefix errors that caused Dashboard and Digital Twin `404` failures.
+- Forwarded authenticated caller JWTs through AI prediction workflows; live prediction now returns successfully.
+- Verified Dashboard and Digital Twin browser rendering after the fix.
+- Verified AI: 23 passed; backend: 31 passed, 1 skipped; frontend type-check/build passed.
+- Verified authenticated live prediction, recommendation, simulation, and orchestration flows.
+- Verified simulation leaves `Twin.current_state` and `Twin.predicted_state` unchanged.
+- Added production-oriented Kubernetes manifests under `k8s/` and a static nginx frontend image.
+- Kubernetes manifests were rendered but not applied because no cluster or AWS account was available.

@@ -12,6 +12,10 @@ This project is fully containerized using Docker Compose.
 - **Frontend**: Vite dev server mapped to port `5173`
 - **AI Service**: FastAPI ML server mapped to port `8001`
 
+The Compose configuration is the development/runtime verification profile. For production-like Kubernetes
+deployment, use the manifests in `../k8s/`, build `frontend/Dockerfile.prod`, replace the example Secret,
+and publish the backend, AI-service, and frontend images to a registry accessible by the cluster.
+
 ## Usage
 
 ### Start
@@ -52,6 +56,20 @@ To run database migrations after starting the stack:
 ```bash
 docker compose exec backend alembic upgrade head
 ```
+
+The Kubernetes backend deployment runs `alembic upgrade head` in an init container before starting application
+replicas. PostgreSQL data is stored in the `postgres-data` PVC.
+
+### Kubernetes validation
+
+Render the deployment without applying it:
+
+```bash
+kubectl kustomize k8s
+```
+
+Applying the manifests requires a configured cluster, registry image names, ingress controller, domain, and
+values copied from `k8s/secret.example.yaml` into a real Secret. No production credentials belong in Git.
 
 ### Testing
 To run backend tests inside the container (against the docker database):
