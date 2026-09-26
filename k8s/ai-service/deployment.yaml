@@ -34,6 +34,16 @@ spec:
                 configMapKeyRef:
                   name: agenttwinops-config
                   key: AI_SERVICE_MODE
+            - name: AI_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: agenttwinops-config
+                  key: AI_PROVIDER
+            - name: GEMINI_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: agenttwinops-config
+                  key: GEMINI_MODEL
             - name: AI_MODEL
               valueFrom:
                 configMapKeyRef:
@@ -77,6 +87,12 @@ spec:
                 secretKeyRef:
                   name: agenttwinops-secrets
                   key: OPENAI_API_KEY
+                  optional: true
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GEMINI_API_KEY
                   optional: true
             - name: ANTHROPIC_API_KEY
               valueFrom:

@@ -12,6 +12,8 @@ data:
   BACKEND_API_URL: http://backend:8000
   AI_SERVICE_ENV: production
   AI_SERVICE_MODE: real
+  AI_PROVIDER: gemini
+  GEMINI_MODEL: gemini-3.8-flash
   AI_MODEL: gpt-4o-mini
   AI_TEMPERATURE: "0.3"
   AI_MAX_TOKENS: "2000"

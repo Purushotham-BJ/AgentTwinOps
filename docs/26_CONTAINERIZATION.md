@@ -56,6 +56,11 @@ docker compose logs -f ai-service
 - The AI service reads `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` from deployment
   secrets and uses `AI_MODEL`, `AI_TEMPERATURE`, and `AI_MAX_TOKENS` from
   non-secret configuration.
+- Gemini is the primary provider when `AI_PROVIDER=gemini`; its
+  `GEMINI_API_KEY` is supplied through the local `.env` or Kubernetes Secret,
+  and `GEMINI_MODEL` selects the model. If the selected provider is unavailable
+  or unconfigured, deterministic agents continue to operate without claiming
+  an LLM-backed result.
 - AI-to-backend authentication uses `BACKEND_API_TOKEN` when configured,
   otherwise it logs in with `BACKEND_SERVICE_EMAIL` and
   `BACKEND_SERVICE_PASSWORD`. Requests originating from an authenticated

@@ -27,9 +27,12 @@ class Settings(BaseSettings):
     # AI Provider
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
     
     # Model Config
+    AI_PROVIDER: str = "gemini"
     AI_MODEL: str = "gpt-4o-mini"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     AI_TEMPERATURE: float = 0.3
     AI_MAX_TOKENS: int = 2000
     
