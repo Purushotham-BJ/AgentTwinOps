@@ -5,17 +5,22 @@ Google and GitHub OAuth authorization-code flows.
 
 ## Configuration
 
-Set these backend variables only when enabling a provider:
+For local Docker development, edit the ignored repository-root `.env` file.
+Compose passes these values into the backend container. Use these local
+callback values:
 
 ```env
-FRONTEND_URL=https://ops.example.com
+FRONTEND_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=https://api.example.com/api/v1/auth/oauth/google/callback
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/auth/oauth/google/callback
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
-GITHUB_REDIRECT_URI=https://api.example.com/api/v1/auth/oauth/github/callback
+GITHUB_REDIRECT_URI=http://localhost:8000/api/v1/auth/oauth/github/callback
 ```
+
+For production, provide equivalent values through a secret manager or
+Kubernetes Secret/ConfigMap. Never commit the local `.env` file.
 
 Provider credentials are never sent to the browser. Google requests only
 `openid email profile`; GitHub uses `read:user user:email`. Provider emails must

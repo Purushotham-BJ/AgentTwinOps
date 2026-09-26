@@ -37,8 +37,8 @@ class OAuthService:
         raise HTTPException(status_code=404, detail="Unsupported OAuth provider")
 
     def authorization_url(self, provider: str, user_id: str | None = None) -> str:
-        client_id, _, redirect_uri = self._config(provider)
-        if not client_id:
+        client_id, client_secret, redirect_uri = self._config(provider)
+        if not client_id or not client_secret:
             raise HTTPException(status_code=503, detail=f"{provider.title()} authentication is not configured")
         state = self._encode_state(provider, user_id)
         if provider == "google":

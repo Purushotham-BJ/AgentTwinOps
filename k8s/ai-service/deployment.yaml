@@ -39,6 +39,66 @@ spec:
                 configMapKeyRef:
                   name: agenttwinops-config
                   key: CORS_ORIGINS_AI
+            - name: BACKEND_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: BACKEND_API_TOKEN
+                  optional: true
+            - name: BACKEND_SERVICE_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: BACKEND_SERVICE_EMAIL
+                  optional: true
+            - name: BACKEND_SERVICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: BACKEND_SERVICE_PASSWORD
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: BACKEND_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: BACKEND_API_TOKEN
+                  optional: true
+            - name: BACKEND_SERVICE_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: BACKEND_SERVICE_EMAIL
+                  optional: true
+            - name: BACKEND_SERVICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: BACKEND_SERVICE_PASSWORD
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: ANTHROPIC_API_KEY
+                  optional: true
           readinessProbe:
             httpGet:
               path: /api/v1/health
