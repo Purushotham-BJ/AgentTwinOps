@@ -9,7 +9,6 @@ import { Select } from '@/components/common/Input';
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/ErrorState';
 import { MetricChart } from '@/components/common/MetricChart';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { formatPercent } from '@/utils/format';
 import { getRiskColor } from '@/utils/statusHelpers';
@@ -52,7 +51,7 @@ export function SimulationPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <MockDataBanner feature="Simulation engine" apiEndpoint="POST /api/simulate/{scenario}" />
+        <Badge variant="info">SIMULATED ONLY — no production state is changed</Badge>
       </div>
 
       {/* Scenario selection */}
@@ -120,6 +119,32 @@ export function SimulationPage() {
           )}
           {!isRunning && result && (
             <>
+              <Card>
+                <CardHeader title="Baseline vs Simulated State" icon={<FlaskConical size={16} />} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+                  {(['baseline_state', 'simulated_state'] as const).map((key) => (
+                    <div key={key} style={{ background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3)' }}>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+                        {key === 'baseline_state' ? 'Baseline' : 'Simulated'}
+                      </div>
+                      {Object.entries(result[key]).map(([name, value]) => (
+                        <div key={name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+                          <span>{name.replace('_', ' ')}</span><strong>{typeof value === 'number' ? value.toFixed(1) : value}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                  <Badge variant="info">Health {result.simulated_health_score.toFixed(0)}%</Badge>
+                  <Badge variant={result.simulated_operational_status === 'CRITICAL' ? 'error' : result.simulated_operational_status === 'WARNING' ? 'warning' : 'success'}>
+                    {result.simulated_operational_status}
+                  </Badge>
+                </div>
+                <ul style={{ margin: 'var(--space-3) 0 0', paddingLeft: 'var(--space-5)', color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
+                  {result.impact_summary.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </Card>
               {/* Impact summary */}
               <Card>
                 <CardHeader title="Predicted Impact" icon={<FlaskConical size={16} />}

@@ -1,78 +1,139 @@
 """AI Service API Routes"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from typing import List
 from app.schemas.prediction import PredictionRequest, PredictionResponse
 from app.schemas.simulation import SimulationRequest, SimulationResponse
 from app.schemas.recommendation import RecommendationListResponse, RecommendationGenerateRequest
+from app.schemas.orchestration import OrchestrationRequest, OrchestrationResponse
 from app.schemas.twin import TwinListResponse, TwinResponse
 from app.services.prediction_service import prediction_service
 from app.services.simulation_service import simulation_service
 from app.services.recommendation_service import recommendation_service
 from app.services.twin_service import twin_service
+from app.services.orchestration_service import orchestration_service
 from datetime import datetime
 
 router = APIRouter(prefix="/api/v1", tags=["ai"])
 
 
+@router.post("/agents/orchestrate", response_model=OrchestrationResponse)
+async def orchestrate_agents(
+    request: OrchestrationRequest,
+    authorization: str | None = Header(default=None),
+):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
+    try:
+        return await orchestration_service.orchestrate(
+            service_id=request.service_id,
+            include_prediction=request.include_prediction,
+            include_simulation=request.include_simulation,
+            include_recovery=request.include_recovery,
+            horizon_minutes=request.horizon_minutes,
+            auth_token=authorization,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Agent orchestration unavailable") from exc
+
+
 @router.post("/predict/cpu", response_model=PredictionResponse)
-async def predict_cpu(request: PredictionRequest):
+async def predict_cpu(
+    request: PredictionRequest,
+    authorization: str | None = Header(default=None),
+):
     """Predict CPU usage for a service"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     result = await prediction_service.predict(
         service_id=request.service_id,
         prediction_type="cpu",
-        horizon_minutes=request.horizon_minutes
+        horizon_minutes=request.horizon_minutes,
+        auth_token=authorization,
     )
     return PredictionResponse(data=result, timestamp=datetime.now())
 
 
 @router.post("/predict/memory", response_model=PredictionResponse)
-async def predict_memory(request: PredictionRequest):
+async def predict_memory(
+    request: PredictionRequest,
+    authorization: str | None = Header(default=None),
+):
     """Predict memory usage for a service"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     result = await prediction_service.predict(
         service_id=request.service_id,
         prediction_type="memory",
-        horizon_minutes=request.horizon_minutes
+        horizon_minutes=request.horizon_minutes,
+        auth_token=authorization,
     )
     return PredictionResponse(data=result, timestamp=datetime.now())
 
 
 @router.post("/predict/failure", response_model=PredictionResponse)
-async def predict_failure(request: PredictionRequest):
+async def predict_failure(
+    request: PredictionRequest,
+    authorization: str | None = Header(default=None),
+):
     """Predict failure probability for a service"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     result = await prediction_service.predict(
         service_id=request.service_id,
         prediction_type="failure",
-        horizon_minutes=request.horizon_minutes
+        horizon_minutes=request.horizon_minutes,
+        auth_token=authorization,
     )
     return PredictionResponse(data=result, timestamp=datetime.now())
 
 
 @router.post("/simulate", response_model=SimulationResponse)
-async def simulate_scenario(request: SimulationRequest):
+async def simulate_scenario(
+    request: SimulationRequest,
+    authorization: str | None = Header(default=None),
+):
     """Run simulation scenario"""
-    result = await simulation_service.simulate(
-        scenario=request.scenario,
-        service_id=request.service_id,
-        parameters=request.parameters
-    )
+    try:
+        result = await simulation_service.simulate(
+            scenario=request.scenario,
+            service_id=request.service_id,
+            parameters=request.parameters,
+            horizon_minutes=request.horizon_minutes,
+            auth_token=authorization,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return SimulationResponse(data=result, timestamp=datetime.now())
 
 
 @router.get("/recommendations", response_model=RecommendationListResponse)
-async def get_recommendations():
+async def get_recommendations(authorization: str | None = Header(default=None)):
     """Get all recommendations"""
-    recommendations = await recommendation_service.generate_recommendations()
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
+    recommendations = await recommendation_service.generate_recommendations(auth_token=authorization)
     return RecommendationListResponse(data=recommendations, timestamp=datetime.now())
 
 
 @router.post("/recommendations/generate", response_model=RecommendationListResponse)
-async def generate_recommendations(request: RecommendationGenerateRequest):
+async def generate_recommendations(
+    request: RecommendationGenerateRequest,
+    authorization: str | None = Header(default=None),
+):
     """Generate new recommendations"""
-    recommendations = await recommendation_service.generate_recommendations(
-        infrastructure_ids=request.infrastructure_ids,
-        incident_ids=request.incident_ids,
-        force_regenerate=request.force_regenerate
-    )
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
+    try:
+        recommendations = await recommendation_service.generate_recommendations(
+            infrastructure_ids=request.infrastructure_ids,
+            incident_ids=request.incident_ids,
+            force_regenerate=request.force_regenerate,
+            auth_token=authorization,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return RecommendationListResponse(data=recommendations, timestamp=datetime.now())
 
 

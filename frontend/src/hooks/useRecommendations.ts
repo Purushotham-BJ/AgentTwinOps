@@ -28,11 +28,12 @@ export function useRecommendations(infrastructure: InfrastructureItem[], inciden
     else setIsLoading(false);
   }, [fetch, infrastructure.length]);
 
-  const generate = useCallback(async () => {
+  const generate = useCallback(async (serviceId?: string) => {
     setIsGenerating(true);
     setError(null);
     try {
-      const data = await recommendationService.generate(infrastructure, incidents);
+      const selected = serviceId ? infrastructure.filter((item) => item.id === serviceId) : infrastructure;
+      const data = await recommendationService.generate(selected, incidents);
       setRecommendations(data);
     } catch (err) {
       setError(getErrorMessage(err));

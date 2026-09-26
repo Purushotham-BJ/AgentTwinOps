@@ -93,6 +93,13 @@ Supported Simulations
 - Traffic Spike
 - Database Failure
 
+Sprint 7 uses `POST /api/v1/simulate` for transient Digital Twin what-if
+simulations. The engine reads the registered service and latest metric
+baseline, applies deterministic CPU, memory, latency, and status changes, and
+returns baseline state, simulated state, health, failure probability,
+operational status, impact explanations, and recommendations. Simulations
+never write infrastructure, metrics, or either Twin state.
+
 ---
 
 # Module 6
@@ -108,6 +115,10 @@ Recommendations
 - Scaling
 - Restart
 - Resource Allocation
+
+Recommendations are generated on demand from real operational state. Healthy
+services return an empty result; active CPU, memory, latency, failure-risk,
+status, anomaly, and incident rules produce actionable, prioritized results.
 
 ---
 

@@ -13,6 +13,8 @@ from app.database.base import Base
 
 if TYPE_CHECKING:
     from app.models.incident import Incident
+    from app.models.metric import Metric
+    from app.models.twin import Twin, TwinHistory
 
 
 class InfrastructureStatus(str, enum.Enum):
@@ -80,6 +82,19 @@ class Infrastructure(Base):
     incidents: Mapped[List["Incident"]] = relationship(
         "Incident",
         back_populates="infrastructure",
+        lazy="selectin",
+    )
+    metrics: Mapped[List["Metric"]] = relationship(
+        "Metric",
+        back_populates="infrastructure",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    twin: Mapped["Twin"] = relationship(
+        "Twin",
+        back_populates="infrastructure",
+        cascade="all, delete-orphan",
+        uselist=False,
         lazy="selectin",
     )
 

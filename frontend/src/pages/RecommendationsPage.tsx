@@ -9,7 +9,6 @@ import { Badge } from '@/components/common/Badge';
 import { Select } from '@/components/common/Input';
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/ErrorState';
-import { MockDataBanner } from '@/components/common/MockDataBanner';
 import { formatRelativeTime } from '@/utils/format';
 import { getSeverityColor, getRiskColor } from '@/utils/statusHelpers';
 import type { Recommendation, RecommendationPriority } from '@/types';
@@ -28,23 +27,26 @@ export function RecommendationsPage() {
   const { recommendations, isLoading, isGenerating, error, generate } = useRecommendations(infra, incidents);
   const [priorityFilter, setPriorityFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [serviceFilter, setServiceFilter] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const filtered = recommendations.filter((r) => {
     const matchPri = !priorityFilter || r.priority === priorityFilter;
     const matchCat = !categoryFilter || r.category === categoryFilter;
-    return matchPri && matchCat;
+    const matchService = !serviceFilter || r.service_id === serviceFilter;
+    return matchPri && matchCat && matchService;
   });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-        <MockDataBanner feature="AI recommendations" apiEndpoint="GET /api/recommendations" />
+        <Badge variant="info">Deterministic recommendations from live operational state</Badge>
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+          <Select options={[{ value: '', label: 'All services' }, ...infra.map((item) => ({ value: item.id, label: item.service_name }))]} value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} style={{ width: '170px' }} />
           <Select options={[{ value: '', label: 'All priorities' }, ...(['critical','high','medium','low'].map(p => ({ value: p, label: p.charAt(0).toUpperCase()+p.slice(1) })))]} value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={{ width: '150px' }} />
           <Select options={[{ value: '', label: 'All categories' }, ...(['scaling','reliability','optimization','security','cost'].map(c => ({ value: c, label: c.charAt(0).toUpperCase()+c.slice(1) })))]} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ width: '160px' }} />
-          <Button variant="primary" size="sm" onClick={generate} isLoading={isGenerating} leftIcon={<Sparkles size={14} />}>
+          <Button variant="primary" size="sm" onClick={() => generate(serviceFilter || undefined)} isLoading={isGenerating} leftIcon={<Sparkles size={14} />}>
             {isGenerating ? 'Generating...' : 'Generate AI Recommendations'}
           </Button>
         </div>
@@ -67,7 +69,7 @@ export function RecommendationsPage() {
         <LoadingState message="Loading AI recommendations..." />
       ) : filtered.length === 0 ? (
         <EmptyState title="No recommendations" description="Click Generate AI Recommendations to analyze your infrastructure." icon={<Lightbulb size={48} />}
-          action={<Button variant="primary" size="sm" onClick={generate} leftIcon={<Sparkles size={14} />}>Generate</Button>}
+          action={<Button variant="primary" size="sm" onClick={() => generate(serviceFilter || undefined)} leftIcon={<Sparkles size={14} />}>Generate</Button>}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
@@ -109,6 +111,14 @@ function RecommendationCard({ rec, expanded, onToggle }: { rec: Recommendation; 
         <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--color-border)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: '600', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-2)' }}>Reason</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{rec.reason}</p>
+            </div>
+            <div>
+              <div style={{ fontSize: 'var(--text-xs)', fontWeight: '600', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-2)' }}>Recommended Action</div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{rec.action}</p>
+            </div>
+            <div>
               <div style={{ fontSize: 'var(--text-xs)', fontWeight: '600', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-2)' }}>Expected Impact</div>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{rec.expected_impact}</p>
             </div>
@@ -120,6 +130,9 @@ function RecommendationCard({ rec, expanded, onToggle }: { rec: Recommendation; 
                   {step}
                 </div>
               ))}
+              <div style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                Rule confidence: {(rec.confidence * 100).toFixed(0)}%
+              </div>
             </div>
           </div>
         </div>

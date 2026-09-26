@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agenttwinops-config
+  namespace: agenttwinops
+data:
+  APP_ENV: production
+  APP_DEBUG: "false"
+  LOG_LEVEL: INFO
+  LOG_FORMAT: json
+  CORS_ORIGINS: '["https://agenttwinops.example.com"]'
+  BACKEND_API_URL: http://backend:8000
+  AI_SERVICE_ENV: production
+  AI_SERVICE_MODE: real
+  AI_PROVIDER: gemini
+  GEMINI_MODEL: gemini-3.8-flash
+  AI_MODEL: gpt-4o-mini
+  AI_TEMPERATURE: "0.3"
+  AI_MAX_TOKENS: "2000"
+  CORS_ORIGINS_AI: https://agenttwinops.example.com
+  VITE_API_BASE_URL: https://agenttwinops.example.com
+  VITE_AI_API_BASE_URL: https://agenttwinops.example.com
+  VITE_APP_ENV: production
+  FRONTEND_URL: https://agenttwinops.example.com
+  GOOGLE_REDIRECT_URI: https://api.agenttwinops.example.com/api/v1/auth/oauth/google/callback
+  GITHUB_REDIRECT_URI: https://api.agenttwinops.example.com/api/v1/auth/oauth/github/callback

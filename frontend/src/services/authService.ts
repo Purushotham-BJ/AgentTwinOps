@@ -32,4 +32,19 @@ export const authService = {
     const { data } = await api.get<ApiResponse<ProfileResponse>>(`${PREFIX}/profile`);
     return data.data;
   },
+
+  oauthLoginUrl(provider: 'google' | 'github'): string {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    return `${baseUrl}${PREFIX}/oauth/${provider}/login`;
+  },
+
+  async connectedProviders(): Promise<Array<{ provider: string; connected: boolean; provider_email?: string }>> {
+    const { data } = await api.get<ApiResponse<{ providers: Array<{ provider: string; connected: boolean; provider_email?: string }> }>>(`${PREFIX}/oauth/providers`);
+    return data.data.providers;
+  },
+
+  async oauthLinkUrl(provider: 'google' | 'github'): Promise<string> {
+    const { data } = await api.post<ApiResponse<{ url: string }>>(`${PREFIX}/oauth/${provider}/start`);
+    return data.data.url;
+  },
 };

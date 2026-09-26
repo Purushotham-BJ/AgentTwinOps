@@ -1,93 +1,126 @@
-"""Simulation Agent — runs what-if scenarios"""
-from typing import Dict, Any
-from datetime import datetime, timedelta
-from .base import BaseAgent
+"""Deterministic simulation calculations."""
+from typing import Any, Dict, List
 
 
-SCENARIO_CONFIGS = {
-    "cpu_spike": {"cpu_delta": 45, "mem_delta": 15, "lat_delta": 30, "failure_impact": 0.5},
-    "traffic_surge": {"cpu_delta": 35, "mem_delta": 25, "lat_delta": 80, "failure_impact": 0.4},
-    "database_failure": {"cpu_delta": 20, "mem_delta": 10, "lat_delta": 500, "failure_impact": 0.8},
-    "pod_eviction": {"cpu_delta": 10, "mem_delta": -30, "lat_delta": 60, "failure_impact": 0.6},
+SCENARIO_DELTAS: Dict[str, Dict[str, float]] = {
+    "cpu_spike": {"cpu_usage": 45.0, "memory_usage": 15.0, "latency_ms": 30.0},
+    "traffic_surge": {"cpu_usage": 35.0, "memory_usage": 25.0, "latency_ms": 80.0},
+    "database_failure": {"cpu_usage": 20.0, "memory_usage": 10.0, "latency_ms": 500.0},
+    "pod_eviction": {"cpu_usage": 10.0, "memory_usage": -30.0, "latency_ms": 60.0},
+    "custom": {},
 }
 
 
-class SimulationAgent(BaseAgent):
-    """
-    Simulation Agent
-    
-    Responsibilities:
-    - Run what-if scenarios
-    - Model infrastructure behavior under stress
-    - Generate impact predictions
-    """
-    
-    def __init__(self):
-        super().__init__("SimulationAgent")
-    
-    async def process(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute simulation scenario"""
-        scenario = state.get("scenario", "cpu_spike")
-        service_id = state.get("service_id")
-        
-        config = SCENARIO_CONFIGS.get(scenario, SCENARIO_CONFIGS["cpu_spike"])
-        
-        # Generate impact analysis
-        impact = {
-            "cpu_delta": config["cpu_delta"] + (hash(service_id) % 10 - 5),
-            "memory_delta": config["mem_delta"] + (hash(service_id) % 10 - 5),
-            "latency_delta": config["lat_delta"] + (hash(service_id) % 20 - 10),
-            "failure_probability": min(0.95, config["failure_impact"] + (hash(service_id) % 10) * 0.03),
+class SimulationAgent:
+    """Pure, deterministic what-if simulation engine."""
+
+    def simulate(
+        self, baseline: Dict[str, Any], scenario: str, changes: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        current = {
+            "cpu_usage": float(baseline.get("cpu_usage", 0.0)),
+            "memory_usage": float(baseline.get("memory_usage", 0.0)),
+            "latency_ms": float(baseline.get("latency_ms", 0.0)),
+            "status": baseline.get("status", "active"),
         }
-        
-        # Generate timeline (20 points over 60 minutes)
-        timeline = []
-        now = datetime.now()
-        for i in range(20):
-            phase = i / 20
-            # Impact curve: ramps up, peaks, then declines
-            if phase < 0.3:
-                intensity = phase / 0.3
-            elif phase < 0.6:
-                intensity = 1.0
-            else:
-                intensity = (1 - phase) / 0.4
-            
-            timeline.append({
-                "timestamp": (now + timedelta(minutes=i * 3)).isoformat(),
-                "value": max(0, min(100, 30 + config["cpu_delta"] * intensity)),
-            })
-        
-        # Generate recommendations using LLM if available
-        if self.llm:
-            try:
-                from langchain_core.prompts import ChatPromptTemplate
-                prompt = ChatPromptTemplate.from_messages([
-                    ("system", "You are an infrastructure resilience expert. Provide mitigation recommendations."),
-                    ("user", f"Scenario: {scenario}. CPU impact: +{impact['cpu_delta']}%, Latency: +{impact['latency_delta']}ms. What actions should be taken?"),
-                ])
-                response = await self.llm.ainvoke(prompt.format_messages())
-                recommendations = [line.strip() for line in response.content.split("\n") if line.strip() and len(line) > 10][:4]
-            except:
-                recommendations = self._get_default_recommendations(scenario)
-        else:
-            recommendations = self._get_default_recommendations(scenario)
-        
-        result = {
-            "impact": impact,
-            "timeline": timeline,
-            "recommendations": recommendations,
+        simulated = dict(current)
+        deltas = SCENARIO_DELTAS[scenario]
+        for field, delta in deltas.items():
+            simulated[field] = delta + current[field]
+        for field in ("cpu_usage", "memory_usage", "latency_ms"):
+            if field in changes:
+                simulated[field] = changes[field]
+        if "status" in changes:
+            simulated["status"] = changes["status"]
+        simulated["cpu_usage"] = min(100.0, max(0.0, simulated["cpu_usage"]))
+        simulated["memory_usage"] = min(100.0, max(0.0, simulated["memory_usage"]))
+        simulated["latency_ms"] = max(0.0, simulated["latency_ms"])
+
+        baseline_health = self.health_score(current)
+        simulated_health = self.health_score(simulated)
+        baseline_failure = self.failure_probability(current, baseline_health)
+        simulated_failure = self.failure_probability(simulated, simulated_health)
+        status = self.operational_status(simulated)
+        summary = self.impact_summary(current, simulated, baseline_health, simulated_health)
+        return {
+            "baseline": current,
+            "simulated": simulated,
+            "baseline_health_score": baseline_health,
+            "simulated_health_score": simulated_health,
+            "baseline_failure_probability": baseline_failure,
+            "simulated_failure_probability": simulated_failure,
+            "operational_status": status,
+            "impact_summary": summary,
         }
-        
-        state["simulation_result"] = result
-        return state
-    
-    def _get_default_recommendations(self, scenario: str) -> list:
-        """Default recommendations by scenario"""
-        base = [
-            "Pre-scale service to handle projected load",
-            "Enable auto-scaling policies with lower thresholds",
-            "Set up circuit breakers for downstream dependencies",
-            "Increase health check frequency during scenario window",
-        ]
-        return base
+
+    @staticmethod
+    def health_score(state: Dict[str, Any]) -> float:
+        if state.get("status") in {"inactive", "unhealthy"}:
+            return 0.0
+        score = 100.0
+        for value in (state["cpu_usage"], state["memory_usage"]):
+            if value > 90:
+                score -= 30
+            elif value > 70:
+                score -= 10
+        if state["latency_ms"] > 1000:
+            score -= 20
+        elif state["latency_ms"] > 500:
+            score -= 5
+        return max(0.0, score)
+
+    @staticmethod
+    def failure_probability(state: Dict[str, Any], health: float) -> float:
+        status_risk = {"inactive": 0.5, "unhealthy": 0.5, "degraded": 0.2}.get(
+            state.get("status"), 0.0
+        )
+        return min(1.0, max(0.0, (100.0 - health) / 100.0 + status_risk))
+
+    @staticmethod
+    def operational_status(state: Dict[str, Any]) -> str:
+        if state.get("status") in {"inactive", "unhealthy"}:
+            return "CRITICAL"
+        if (
+            state["cpu_usage"] >= 90
+            or state["memory_usage"] >= 90
+            or state["latency_ms"] >= 1000
+        ):
+            return "CRITICAL"
+        if (
+            state["cpu_usage"] >= 70
+            or state["memory_usage"] >= 70
+            or state["latency_ms"] >= 500
+            or state.get("status") == "degraded"
+        ):
+            return "WARNING"
+        return "HEALTHY"
+
+    @staticmethod
+    def impact_summary(
+        baseline: Dict[str, Any],
+        simulated: Dict[str, Any],
+        baseline_health: float,
+        simulated_health: float,
+    ) -> List[str]:
+        summary: List[str] = []
+        if simulated["cpu_usage"] != baseline["cpu_usage"]:
+            summary.append("CPU usage changed in the simulated state.")
+        if simulated["memory_usage"] != baseline["memory_usage"]:
+            summary.append("Memory usage changed in the simulated state.")
+        if simulated["latency_ms"] != baseline["latency_ms"]:
+            summary.append("Latency changed in the simulated state.")
+        if simulated["status"] != baseline["status"]:
+            summary.append("Infrastructure status changed in the simulated state.")
+        if simulated_health < baseline_health:
+            summary.append("Simulated health decreased.")
+        if not summary:
+            summary.append("Scenario does not change the baseline state.")
+        return summary
+
+    @staticmethod
+    def recommendations(status: str) -> List[str]:
+        if status == "CRITICAL":
+            return ["Investigate the simulated critical condition before applying it."]
+        if status == "WARNING":
+            return ["Monitor the affected resource and prepare mitigation."]
+        return ["Continue normal monitoring."]

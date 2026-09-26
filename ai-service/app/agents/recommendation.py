@@ -1,127 +1,80 @@
-"""Recommendation Agent — generates prioritized recommendations"""
-from typing import Dict, Any, List
-from datetime import datetime
-from .base import BaseAgent
-from langchain_core.prompts import ChatPromptTemplate
+"""Deterministic, explainable recommendation rules."""
+from typing import Any, Dict, List
 
 
-class RecommendationAgent(BaseAgent):
-    """
-    Recommendation Agent
-    
-    Responsibilities:
-    - Synthesize insights from all agents
-    - Generate prioritized recommendations
-    - Format output for dashboard
-    """
-    
-    def __init__(self):
-        super().__init__("RecommendationAgent")
-    
-    async def process(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate final recommendations"""
-        recovery_recs = state.get("recovery_recommendations", [])
-        monitoring = state.get("monitoring_analysis", {})
-        prediction = state.get("prediction_analysis", {})
-        
-        recommendations = []
-        
-        # Process recovery recommendations
-        for rec in recovery_recs:
-            recommendations.append({
-                "id": f"rec_{hash(rec['action']) % 10000:04d}",
-                "service_id": state.get("service_id"),
-                "service_name": f"Service {state.get('service_id', 'unknown')[-4:]}",
-                "title": rec["action"],
-                "description": rec["impact"],
-                "priority": rec["priority"],
-                "severity": rec["priority"],
-                "expected_impact": rec["impact"],
-                "implementation_steps": rec["steps"],
-                "category": self._categorize(rec["action"]),
-                "estimated_effort": self._estimate_effort(rec["action"]),
-                "created_at": datetime.now().isoformat(),
-                "source": "ai",
-            })
-        
-        # Add cost optimization recommendations
-        if monitoring:
-            health = monitoring.get("infrastructure_health", {})
-            if health.get("healthy", 0) == health.get("total", 0) and health.get("total", 0) > 0:
-                recommendations.append({
-                    "id": f"rec_cost_{hash(str(monitoring)) % 10000:04d}",
-                    "service_id": None,
-                    "service_name": "All Services",
-                    "title": "Optimize resource allocation",
-                    "description": "All services healthy - opportunity for resource optimization",
-                    "priority": "low",
-                    "severity": "low",
-                    "expected_impact": "10-20% cost reduction without service impact",
-                    "implementation_steps": [
-                        "Review CPU and memory requests vs actual usage",
-                        "Right-size container resources",
-                        "Enable cluster autoscaling",
-                        "Implement pod disruption budgets",
-                    ],
-                    "category": "cost",
-                    "estimated_effort": "medium",
-                    "created_at": datetime.now().isoformat(),
-                    "source": "ai",
-                })
-        
-        # Add monitoring recommendations if AI available
-        if self.llm and len(recommendations) < 3:
-            try:
-                prompt = ChatPromptTemplate.from_messages([
-                    ("system", "You are a cloud infrastructure expert. Generate ONE specific, actionable recommendation."),
-                    ("user", f"Infrastructure state: {monitoring}. Suggest one proactive improvement focusing on reliability or security."),
-                ])
-                response = await self.llm.ainvoke(prompt.format_messages())
-                
-                recommendations.append({
-                    "id": f"rec_ai_{hash(response.content) % 10000:04d}",
-                    "service_id": None,
-                    "service_name": "Infrastructure",
-                    "title": "AI-suggested improvement",
-                    "description": response.content[:200],
-                    "priority": "medium",
-                    "severity": "medium",
-                    "expected_impact": "Enhanced system reliability",
-                    "implementation_steps": [
-                        line.strip() for line in response.content.split("\n") 
-                        if line.strip() and len(line) > 10
-                    ][:3],
-                    "category": "reliability",
-                    "estimated_effort": "medium",
-                    "created_at": datetime.now().isoformat(),
-                    "source": "ai",
-                })
-            except:
-                pass
-        
-        state["recommendations"] = recommendations
-        return state
-    
-    def _categorize(self, action: str) -> str:
-        """Categorize recommendation"""
-        action_lower = action.lower()
-        if "scale" in action_lower or "replica" in action_lower:
-            return "scaling"
-        elif "security" in action_lower or "access" in action_lower:
-            return "security"
-        elif "cost" in action_lower or "optimize" in action_lower:
-            return "cost"
-        elif "restart" in action_lower or "recovery" in action_lower:
-            return "reliability"
-        else:
-            return "optimization"
-    
-    def _estimate_effort(self, action: str) -> str:
-        """Estimate implementation effort"""
-        action_lower = action.lower()
-        if "restart" in action_lower or "scale" in action_lower:
-            return "low"
-        elif "optimize" in action_lower or "configure" in action_lower:
-            return "medium"
-        else:
-            return "high"
+PRIORITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+
+class RecommendationAgent:
+    """Evaluate one service's operational state without side effects."""
+
+    def generate(
+        self,
+        service: Dict[str, Any],
+        metric: Dict[str, Any],
+        twin: Dict[str, Any] | None,
+        incidents: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        current = (twin or {}).get("current_state") or {}
+        cpu = float(current.get("cpu", current.get("cpu_usage", metric.get("cpu_usage", 0))))
+        memory = float(current.get("memory", current.get("memory_usage", metric.get("memory_usage", 0))))
+        latency = float(current.get("latency", current.get("latency_ms", metric.get("latency", 0))))
+        status = str((twin or {}).get("operational_status", service.get("status", "active"))).lower()
+        health = float((twin or {}).get("health_score", 100))
+        failure = float((twin or {}).get("failure_probability", 0))
+        service_id = str(service["id"])
+        name = service.get("service_name", service_id)
+        recommendations: List[Dict[str, Any]] = []
+
+        if cpu >= 90:
+            recommendations.append(self._make(service_id, name, "CPU_OPTIMIZATION", "Scale compute resources", "CPU usage is critically elevated.", "Reduce CPU workload or scale compute resources.", "high", "scaling", 0.95))
+        elif cpu >= 70:
+            recommendations.append(self._make(service_id, name, "CPU_OPTIMIZATION", "Optimize CPU workload", "CPU usage is elevated.", "Reduce CPU workload and review compute allocation.", "medium", "optimization", 0.85))
+        if memory >= 90:
+            recommendations.append(self._make(service_id, name, "MEMORY_OPTIMIZATION", "Increase memory allocation", "Memory usage is critically elevated.", "Investigate memory pressure and increase memory allocation.", "high", "scaling", 0.95))
+        elif memory >= 70:
+            recommendations.append(self._make(service_id, name, "MEMORY_OPTIMIZATION", "Investigate memory pressure", "Memory usage is elevated.", "Inspect memory growth and consider increasing allocation.", "medium", "optimization", 0.85))
+        if latency >= 1000:
+            recommendations.append(self._make(service_id, name, "LATENCY_OPTIMIZATION", "Reduce request latency", "Latency is critically elevated.", "Investigate network and database bottlenecks immediately.", "high", "optimization", 0.95))
+        elif latency >= 500:
+            recommendations.append(self._make(service_id, name, "LATENCY_OPTIMIZATION", "Investigate high latency", "Latency is elevated.", "Investigate network and database bottlenecks.", "medium", "optimization", 0.85))
+        if failure >= 0.7:
+            recommendations.append(self._make(service_id, name, "FAILURE_PREVENTION", "Investigate predicted failure", f"Failure probability is {failure:.0%}.", "Prioritize investigation and recovery actions for the service.", "critical", "reliability", 0.95))
+        elif failure >= 0.4:
+            recommendations.append(self._make(service_id, name, "FAILURE_PREVENTION", "Prepare failure mitigation", f"Failure probability is {failure:.0%}.", "Review recovery procedures and monitor the service closely.", "high", "reliability", 0.85))
+        if status in {"critical", "unhealthy", "inactive"} or health < 50:
+            recommendations.append(self._make(service_id, name, "INCIDENT_RESPONSE", "Investigate critical service state", f"Operational status is {status} with health score {health:.0f}.", "Investigate the service and restore healthy operation.", "critical", "reliability", 0.98))
+        elif status in {"warning", "degraded"} or health < 75:
+            recommendations.append(self._make(service_id, name, "INVESTIGATION", "Investigate degraded service", f"Operational status is {status} with health score {health:.0f}.", "Investigate the detected degradation and monitor recovery.", "high", "reliability", 0.9))
+        if incidents:
+            critical = any(str(i.get("severity", "")).lower() in {"critical", "high"} for i in incidents)
+            recommendations.append(self._make(service_id, name, "INCIDENT_RESPONSE", "Review open incidents", "Open incidents are associated with this service.", "Resolve the highest-severity incident and verify service recovery.", "critical" if critical else "high", "reliability", 0.95 if critical else 0.85))
+        anomalies = (twin or {}).get("anomalies") or []
+        if anomalies:
+            recommendations.append(self._make(service_id, name, "INVESTIGATION", "Investigate detected anomaly", f"{len(anomalies)} anomaly signal(s) are present in the Digital Twin.", "Inspect the anomaly evidence and confirm whether remediation is required.", "high", "reliability", 0.9))
+
+        deduped: Dict[str, Dict[str, Any]] = {}
+        for item in recommendations:
+            deduped[item["type"]] = item
+        return sorted(deduped.values(), key=lambda item: (PRIORITY_ORDER[item["priority"]], item["type"]))
+
+    @staticmethod
+    def _make(service_id: str, name: str, kind: str, title: str, reason: str, action: str, priority: str, category: str, confidence: float) -> Dict[str, Any]:
+        return {
+            "id": f"{service_id}:{kind}",
+            "service_id": service_id,
+            "service_name": name,
+            "type": kind,
+            "title": title,
+            "description": reason,
+            "reason": reason,
+            "action": action,
+            "priority": priority,
+            "severity": priority,
+            "expected_impact": action,
+            "implementation_steps": [action],
+            "category": category,
+            "estimated_effort": "low" if priority == "critical" else "medium",
+            "confidence": confidence,
+            "source": "rule",
+        }

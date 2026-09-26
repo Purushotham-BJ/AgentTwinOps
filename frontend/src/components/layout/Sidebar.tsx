@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Server, AlertTriangle, Cpu, Brain,
+  LayoutDashboard, Server, AlertTriangle, Cpu, Brain, Bot,
   FlaskConical, Lightbulb, FileText, Settings,
   ChevronLeft, ChevronRight, Activity, Boxes,
 } from 'lucide-react';
@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/prediction',       label: 'Prediction',      icon: Brain },
   { path: '/simulation',       label: 'Simulation',      icon: FlaskConical },
   { path: '/recommendations',  label: 'Recommendations', icon: Lightbulb },
+  { path: '/operations',       label: 'Operations',      icon: Bot },
   { path: '/reports',          label: 'Reports',         icon: FileText },
   { path: '/settings',         label: 'Settings',        icon: Settings },
 ];

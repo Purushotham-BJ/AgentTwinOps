@@ -12,7 +12,12 @@ export function useDigitalTwin() {
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const fetch = useCallback(async () => {
-    if (infraLoading || infrastructure.length === 0) return;
+    if (infraLoading) return;
+    if (infrastructure.length === 0) {
+      setTwins([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {

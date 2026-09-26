@@ -12,6 +12,21 @@ POST /api/auth/register
 
 GET /api/auth/profile
 
+GET /api/v1/auth/oauth/{provider}/login
+
+GET /api/v1/auth/oauth/{provider}/callback
+
+GET /api/v1/auth/oauth/{provider}/start
+
+GET /api/v1/auth/oauth/providers
+
+OAuth providers are `google` and `github`. Login and callback perform the
+provider code exchange server-side, validate a signed expiring `state`, and
+return an AgentTwinOps JWT through the frontend callback fragment. Provider
+tokens are never returned. The `start` endpoint is authenticated and links a
+verified provider identity to the current account. Missing provider
+configuration returns `503` without affecting password authentication.
+
 ---
 
 # Infrastructure APIs
@@ -52,35 +67,70 @@ POST /api/twins/create
 
 # Prediction APIs
 
-POST /api/predict/cpu
+POST /api/v1/predict/cpu
 
-POST /api/predict/memory
+POST /api/v1/predict/memory
 
-POST /api/predict/failure
+POST /api/v1/predict/failure
 
-GET /api/predictions
+Each request contains `service_id` and `horizon_minutes` (30–1440 minutes).
+Responses contain `status`, `prediction_source`, `historical_metrics`,
+`feature_vector`, and `model_metrics`. `INSUFFICIENT_DATA` is returned when the
+service has fewer than 30 historical records. Successful CPU and memory
+predictions synchronize `Twin.predicted_state` through the backend API.
 
 ---
 
 # Simulation APIs
 
-POST /api/simulate/cpu
+POST /api/v1/simulate
 
-POST /api/simulate/traffic
+Request fields:
 
-POST /api/simulate/database
+- `service_id` (required): an existing infrastructure service UUID
+- `scenario`: `cpu_spike`, `traffic_surge`, `database_failure`, `pod_eviction`, or `custom`
+- `parameters`: optional absolute `cpu_usage`, `memory_usage`, `latency_ms`, and `status` changes
+- `horizon_minutes`: optional 1–1440 minute projection horizon
 
-POST /api/simulate/pod
-
-GET /api/simulations
+The response includes `baseline_state`, `simulated_state`,
+`simulated_health_score`, `simulated_failure_probability`,
+`simulated_operational_status`, and deterministic `impact_summary` values.
+Unknown services return `404`. The endpoint is transient and does not mutate
+infrastructure, metrics, `current_state`, or `predicted_state`.
 
 ---
 
 # Recommendation APIs
 
-GET /api/recommendations
+GET /api/v1/recommendations
 
-POST /api/recommendations/generate
+POST /api/v1/recommendations/generate
+
+The endpoints require the caller's backend bearer token and evaluate real
+registered services. `infrastructure_ids` may restrict generation to selected
+services; unknown IDs return `404`. Responses include `type`, `priority`,
+`category`, `reason`, `action`, and deterministic `confidence`. No
+recommendation endpoint mutates infrastructure, metrics, or Twin state.
+
+## Multi-Agent Operations API
+
+`POST /api/v1/agents/orchestrate`
+
+The authenticated request accepts a registered `service_id`, optional
+`include_prediction`, `include_simulation`, and `include_recovery` flags, and
+an optional `horizon_minutes`. The response reports agent execution statuses,
+monitoring data, predictions, recommendations, transient simulations,
+proposal-only recovery actions, and isolated errors. Unknown services return
+`404`; missing authentication returns `401`. The workflow does not mutate
+infrastructure, metrics, `Twin.current_state`, or `Twin.predicted_state`.
+
+## Frontend integration
+
+The frontend uses the authenticated backend metrics and Twin APIs for Metrics,
+Dashboard, and Digital Twin views. Prediction, recommendation, simulation, and
+Operations requests forward the stored bearer token to the AI service. A 401
+response clears the session and redirects through the protected-route login
+flow.
 
 ---
 

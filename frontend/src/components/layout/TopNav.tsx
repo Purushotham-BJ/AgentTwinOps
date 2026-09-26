@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Menu, Bell, RefreshCw, User, LogOut, ChevronDown, Activity } from 'lucide-react';
+import { Menu, RefreshCw, User, LogOut, ChevronDown, Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/common/Button';
+import { NotificationBell } from './NotificationBell';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':       'Dashboard',
@@ -87,24 +88,7 @@ export function TopNav({ onMenuClick, lastUpdated, onRefresh }: TopNavProps) {
         </Button>
       )}
 
-      {/* Notifications */}
-      <button
-        style={{
-          position: 'relative',
-          padding: '6px', background: 'transparent', border: 'none',
-          cursor: 'pointer', color: 'var(--color-text-secondary)', borderRadius: 'var(--radius-md)',
-          display: 'flex', alignItems: 'center',
-        }}
-        aria-label="Notifications"
-      >
-        <Bell size={18} />
-        <span style={{
-          position: 'absolute', top: '4px', right: '4px',
-          width: '8px', height: '8px', borderRadius: '50%',
-          background: 'var(--color-red-400)',
-          border: '2px solid var(--color-bg-surface)',
-        }} />
-      </button>
+      <NotificationBell userId={user?.id} />
 
       {/* User menu */}
       <div style={{ position: 'relative' }}>

@@ -32,6 +32,7 @@ class AgentState(TypedDict, total=False):
 class PredictionState(TypedDict, total=False):
     """State for prediction workflow"""
     service_id: str
+    auth_token: str | None
     prediction_type: Literal["cpu", "memory", "failure"]
     horizon_minutes: int
     

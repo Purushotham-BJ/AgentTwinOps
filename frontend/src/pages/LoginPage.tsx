@@ -5,8 +5,19 @@ import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { getErrorMessage } from '@/services/api';
+import { authService } from '@/services/authService';
 
 type Mode = 'login' | 'register';
+
+const PASSWORD_MAX_LENGTH = 128;
+const COMMON_WEAK_PASSWORDS = new Set(['short@1a']);
+const passwordRequirements = [
+  { label: 'At least 8 characters', test: (password: string) => password.length >= 8 },
+  { label: 'One uppercase letter', test: (password: string) => /[A-Z]/.test(password) },
+  { label: 'One lowercase letter', test: (password: string) => /[a-z]/.test(password) },
+  { label: 'One number', test: (password: string) => /[0-9]/.test(password) },
+  { label: 'One special character', test: (password: string) => /[!@#$%^&*()_+\-=[\]{}:;"'<>,.?/\\|`~]/.test(password) },
+];
 
 export function LoginPage() {
   const { login, register, isAuthenticated, isLoading } = useAuth();
@@ -17,7 +28,19 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const passwordChecks = passwordRequirements.map((requirement) => requirement.test(form.password));
+  const passwordIsCommon = COMMON_WEAK_PASSWORDS.has(form.password.toLowerCase());
+  const passwordIsValid = mode === 'login' || (
+    passwordChecks.every(Boolean) &&
+    !passwordIsCommon &&
+    form.password.length <= PASSWORD_MAX_LENGTH &&
+    form.password === form.confirmPassword
+  );
+
+  const startOAuth = (provider: 'google' | 'github') => {
+    window.location.assign(authService.oauthLoginUrl(provider));
+  };
 
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard', { replace: true });
@@ -143,18 +166,56 @@ export function LoginPage() {
               label="Password"
               name="password"
               type={showPass ? 'text' : 'password'}
-              placeholder={mode === 'register' ? 'Min 6 characters' : '••••••••'}
+              placeholder={mode === 'register' ? 'Min 8 characters' : '••••••••'}
               value={form.password}
               onChange={handleChange}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               required
-              minLength={mode === 'register' ? 6 : 1}
+              maxLength={PASSWORD_MAX_LENGTH}
+              minLength={mode === 'register' ? 8 : 1}
               rightIcon={
                 <button type="button" onClick={() => setShowPass((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', padding: 0 }}>
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               }
             />
+
+            {mode === 'register' && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>Password requirements:</div>
+                  {passwordRequirements.map((requirement, index) => (
+                    <div key={requirement.label} style={{
+                      fontSize: 'var(--text-xs)',
+                      color: passwordChecks[index] ? 'var(--color-green-400)' : 'var(--color-text-muted)',
+                    }}>
+                      {passwordChecks[index] ? '✓' : '○'} {requirement.label}
+                    </div>
+                  ))}
+                  {passwordIsCommon && (
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-red-300)' }}>
+                      Choose a less predictable password.
+                    </div>
+                  )}
+                </div>
+                <Input
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Re-enter your password"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                  required
+                  maxLength={PASSWORD_MAX_LENGTH}
+                />
+                {form.confirmPassword && form.password !== form.confirmPassword && (
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-red-300)' }}>
+                    Passwords do not match.
+                  </div>
+                )}
+              </>
+            )}
 
             {error && (
               <div style={{ padding: 'var(--space-3)', background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(248,81,73,0.3)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', color: 'var(--color-red-300)' }}>
@@ -167,12 +228,28 @@ export function LoginPage() {
               variant="primary"
               size="md"
               isLoading={submitting}
+              disabled={mode === 'register' && (!passwordIsValid || !form.name.trim())}
               leftIcon={mode === 'login' ? <LogIn size={16} /> : <UserPlus size={16} />}
               style={{ width: '100%', marginTop: 'var(--space-2)' }}
             >
               {mode === 'login' ? 'Sign In' : 'Create Account'}
             </Button>
           </form>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', margin: 'var(--space-5) 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+            <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>OR CONTINUE WITH</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            {(['google', 'github'] as const).map((provider) => (
+              <button key={provider} type="button" onClick={() => startOAuth(provider)} style={{
+                padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-elevated)', color: 'var(--color-text-primary)', cursor: 'pointer',
+              }}>
+                {provider === 'google' ? 'Continue with Google' : 'Continue with GitHub'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--color-text-disabled)', marginTop: 'var(--space-5)' }}>

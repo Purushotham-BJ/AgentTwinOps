@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: agenttwinops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: migrations
+          image: agenttwinops/backend:latest
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: POSTGRES_DB
+      containers:
+        - name: backend
+          image: agenttwinops/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: POSTGRES_DB
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: SECRET_KEY
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GITHUB_CLIENT_ID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GITHUB_CLIENT_SECRET
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GITHUB_CLIENT_ID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: agenttwinops-secrets
+                  key: GITHUB_CLIENT_SECRET
+          envFrom:
+            - configMapRef:
+                name: agenttwinops-config
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20

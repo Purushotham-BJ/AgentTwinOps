@@ -1,7 +1,9 @@
-"""Authentication router (register, login, profile, logout)."""
+"""Authentication router (password and server-side OAuth flows)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.schemas.responses import ApiResponse
 from app.schemas.auth import (
@@ -9,10 +11,12 @@ from app.schemas.auth import (
     LoginRequest,
     TokenResponse,
     ProfileResponse,
+    OAuthProvidersResponse,
 )
 from app.dependencies.auth import get_current_user
 from app.database.session import get_db
 from app.services.auth import AuthService
+from app.services.oauth import OAuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -23,7 +27,7 @@ async def register(payload: RegisterRequest, session=Depends(get_db)):
     # prevent role escalation by not accepting role in payload
     try:
         user = await service.register(payload.name, payload.email, payload.password)
-    except Exception:
+    except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
     profile = ProfileResponse(
@@ -64,3 +68,49 @@ async def profile(current_user=Depends(get_current_user)):
         updated_at=user.updated_at,
     )
     return ApiResponse(data=profile)
+
+
+@router.get("/oauth/{provider}/start")
+async def oauth_start(
+    provider: str,
+    session=Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Start an authenticated provider-linking flow."""
+    return RedirectResponse(OAuthService(session).authorization_url(provider, str(current_user.id)))
+
+
+@router.post("/oauth/{provider}/start")
+async def oauth_link_start(
+    provider: str,
+    session=Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return ApiResponse(data={"url": OAuthService(session).authorization_url(provider, str(current_user.id))})
+
+
+@router.get("/oauth/{provider}/login")
+async def oauth_login(provider: str, session=Depends(get_db)):
+    """Start a provider login/registration flow."""
+    return RedirectResponse(OAuthService(session).authorization_url(provider))
+
+
+@router.get("/oauth/{provider}/callback")
+async def oauth_callback(
+    provider: str,
+    code: str | None = Query(default=None),
+    state: str | None = Query(default=None),
+    error: str | None = Query(default=None),
+    session=Depends(get_db),
+):
+    if error:
+        raise HTTPException(status_code=400, detail=f"{provider.title()} authorization was cancelled")
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="OAuth callback is missing required parameters")
+    return RedirectResponse(await OAuthService(session).callback(provider, code, state))
+
+
+@router.get("/oauth/providers", response_model=ApiResponse[OAuthProvidersResponse])
+async def oauth_providers(current_user=Depends(get_current_user), session=Depends(get_db)):
+    providers = await OAuthService(session).providers_for_user(current_user.id)
+    return ApiResponse(data=OAuthProvidersResponse(providers=providers))

@@ -44,7 +44,7 @@ def create_app() -> FastAPI:
         logger.info(f"Model: {settings.AI_MODEL}")
         logger.info(f"Real ML Models: {settings.ENABLE_REAL_ML_MODELS}")
         
-        if not settings.OPENAI_API_KEY and not settings.ANTHROPIC_API_KEY:
+        if not settings.GEMINI_API_KEY and not settings.OPENAI_API_KEY and not settings.ANTHROPIC_API_KEY:
             logger.warning("⚠️  No AI provider API key configured - using deterministic fallback")
     
     @app.on_event("shutdown")
@@ -71,9 +71,11 @@ def create_app() -> FastAPI:
         
         # Determine which provider would be used
         llm_provider = None
-        if settings.OPENAI_API_KEY:
+        if settings.AI_PROVIDER.lower() == "gemini" and settings.GEMINI_API_KEY:
+            llm_provider = "Gemini"
+        elif settings.AI_PROVIDER.lower() == "openai" and settings.OPENAI_API_KEY:
             llm_provider = "OpenAI"
-        elif settings.ANTHROPIC_API_KEY:
+        elif settings.AI_PROVIDER.lower() == "anthropic" and settings.ANTHROPIC_API_KEY:
             llm_provider = "Anthropic" 
         
         return {
@@ -84,8 +86,8 @@ def create_app() -> FastAPI:
             "llm": {
                 "status": llm_status,
                 "provider": llm_provider,
-                "model": settings.AI_MODEL if llm_provider else None,
-                "note": "Add OPENAI_API_KEY or ANTHROPIC_API_KEY to .env to activate LLM" if llm_status == "NOT_CONFIGURED" else None
+                "model": settings.GEMINI_MODEL if llm_provider == "Gemini" else settings.AI_MODEL if llm_provider else None,
+                "note": "Add GEMINI_API_KEY to .env to activate Gemini" if llm_status == "NOT_CONFIGURED" else None
             },
             "features": {
                 "real_ml_models": settings.ENABLE_REAL_ML_MODELS,

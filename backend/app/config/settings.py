@@ -39,7 +39,7 @@ class BaseConfig(BaseSettings):
 
     # ── Database ────────────────────────────────────────────────
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:your_password@localhost:5432/agenttwinops"
+        default="postgresql+asyncpg://postgres:admin_password@localhost:5432/agenttwinops"
     )
 
     # ── Server ──────────────────────────────────────────────────
@@ -60,12 +60,24 @@ class BaseConfig(BaseSettings):
 
     # ── API ─────────────────────────────────────────────────────
     API_V1_PREFIX: str = "/api/v1"
+    # ── Metrics collection interval ───────────────────────────────
+    METRIC_STALE_THRESHOLD: int = 30  # seconds, default > collection interval
 
     # ── JWT / Auth ─────────────────────────────────────────────
     # Use existing SECRET_KEY for signing tokens; algorithm and expiry
     # can be configured via environment variables.
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # ── OAuth ──────────────────────────────────────────────────
+    FRONTEND_URL: str = "http://localhost:5173"
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: SecretStr = Field(default=SecretStr(""))
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/oauth/google/callback"
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: SecretStr = Field(default=SecretStr(""))
+    GITHUB_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/oauth/github/callback"
+    OAUTH_STATE_TTL_SECONDS: int = 600
 
     # ── Paths ───────────────────────────────────────────────────
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
@@ -106,6 +118,8 @@ class TestingConfig(BaseConfig):
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"
     # Ensure tests run with a known secret key
     SECRET_KEY: SecretStr = Field(default=SecretStr("test-secret-key"))
+    # Use same DB credentials as Docker compose for test DB
+    DATABASE_URL: str = Field(default="postgresql+asyncpg://postgres:admin_password@localhost:5432/agenttwinops")
 
 
 class ProductionConfig(BaseConfig):

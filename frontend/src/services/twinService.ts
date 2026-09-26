@@ -2,16 +2,50 @@
  * twinService — Digital Twin interface.
  * Connected to AI Service (LangGraph multi-agent system)
  */
-import axios from 'axios';
-import type { TwinObject, InfrastructureItem } from '@/types';
+import type { TwinObject, InfrastructureItem, InfrastructureStatus, TwinState } from '@/types';
+import api from './api';
 
-const AI_API_BASE = import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001';
+const PREFIX = '/api/v1/twins';
 
-const aiClient = axios.create({
-  baseURL: AI_API_BASE,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
-});
+type JsonRecord = Record<string, unknown>;
+
+function mapTwin(raw: JsonRecord, service?: InfrastructureItem): TwinObject {
+  const current = (raw.current_state as JsonRecord | undefined) ?? {};
+  const predicted = (raw.predicted_state as JsonRecord | undefined) ?? {};
+  const toState = (state: JsonRecord, fallback: TwinState): TwinState => ({
+    cpu_usage: Number(state.cpu_usage ?? state.cpu ?? fallback.cpu_usage),
+    memory_usage: Number(state.memory_usage ?? state.memory ?? fallback.memory_usage),
+    latency_ms: Number(state.latency_ms ?? state.latency ?? fallback.latency_ms),
+    error_rate: Number(state.error_rate ?? fallback.error_rate),
+    request_rate: Number(state.request_rate ?? fallback.request_rate),
+    status: (state.status ?? fallback.status) as InfrastructureStatus,
+    prediction_type: state.prediction_type as TwinState['prediction_type'],
+    predicted_value: state.predicted_value as number | undefined,
+    failure_probability: state.failure_probability as number | undefined,
+    confidence: state.confidence as number | undefined,
+    risk_level: state.risk_level as TwinState['risk_level'],
+    recommended_action: state.recommended_action as string | undefined,
+    prediction_timestamp: state.prediction_timestamp as string | undefined,
+    horizon_minutes: state.horizon_minutes as number | undefined,
+    prediction_source: state.prediction_source as TwinState['prediction_source'],
+    model_metrics: state.model_metrics as TwinState['model_metrics'],
+  });
+  const base = toState(current, {
+    cpu_usage: 0, memory_usage: 0, latency_ms: 0, error_rate: 0, request_rate: 0,
+    status: 'unknown' as InfrastructureStatus,
+  });
+  return {
+    id: String(raw.id),
+    name: String(raw.service_name ?? service?.service_name ?? raw.service_id),
+    service_id: String(raw.service_id),
+    service_type: String(raw.service_type ?? service?.service_type ?? 'unknown'),
+    current_state: base,
+    predicted_state: toState(predicted, base),
+    health_score: Number(raw.health_score ?? 0),
+    sync_status: 'synced',
+    last_synced: String(raw.last_sync),
+  };
+}
 
 export const twinService = {
   /**
@@ -19,8 +53,11 @@ export const twinService = {
    * GET /api/v1/twins
    */
   async getTwins(infrastructure: InfrastructureItem[]): Promise<TwinObject[]> {
-    const response = await aiClient.get('/api/v1/twins');
-    return response.data.data;
+    const response = await api.get(`${PREFIX}/`);
+    const servicesById = new Map(infrastructure.map((service) => [service.id, service]));
+    return (response.data ?? []).map((raw: JsonRecord) =>
+      mapTwin(raw, servicesById.get(String(raw.service_id)))
+    );
   },
 
   /**
@@ -28,7 +65,7 @@ export const twinService = {
    * GET /api/v1/twins/{twin_id}
    */
   async getTwin(serviceId: string, serviceName: string): Promise<TwinObject> {
-    const response = await aiClient.get(`/api/v1/twins/twin_${serviceId}`);
-    return response.data.data;
+    const response = await api.get(`${PREFIX}/by-service/${serviceId}`);
+    return mapTwin(response.data);
   },
 };

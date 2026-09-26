@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Bell, Info, LogOut, Save, Shield, Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardHeader } from '@/components/common/Card';
@@ -7,11 +7,18 @@ import { Input } from '@/components/common/Input';
 import { Badge } from '@/components/common/Badge';
 import { formatDate } from '@/utils/format';
 import { systemService } from '@/services/systemService';
+import { authService } from '@/services/authService';
 
 export function SettingsPage() {
   const { user, logout, refreshProfile } = useAuth();
   const [apiVersion, setApiVersion] = useState<{ app_name: string; version: string; api_version: string; python_version: string } | null>(null);
   const [loadingVersion, setLoadingVersion] = useState(false);
+  const [providers, setProviders] = useState<Array<{ provider: string; connected: boolean; provider_email?: string }>>([]);
+  const [linking, setLinking] = useState<string | null>(null);
+
+  useEffect(() => {
+    authService.connectedProviders().then(setProviders).catch(() => setProviders([]));
+  }, []);
 
   const fetchVersion = async () => {
     setLoadingVersion(true);
@@ -59,6 +66,33 @@ export function SettingsPage() {
           <Button variant="secondary" size="sm" leftIcon={<User size={14} />} onClick={refreshProfile} style={{ alignSelf: 'flex-start' }}>
             Refresh Profile
           </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Connected Accounts" icon={<Shield size={16} />} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          {providers.map((provider) => (
+            <div key={provider.provider} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-3)', background: 'var(--color-bg-elevated)', borderRadius: 'var(--radius-md)' }}>
+              <div>
+                <div style={{ fontSize: 'var(--text-sm)', textTransform: 'capitalize' }}>{provider.provider}</div>
+                {provider.provider_email && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{provider.provider_email}</div>}
+              </div>
+              {provider.connected ? (
+                <Badge variant="success">Connected</Badge>
+              ) : (
+                <Button variant="secondary" size="sm" isLoading={linking === provider.provider} onClick={async () => {
+                  setLinking(provider.provider);
+                  try {
+                    const url = await authService.oauthLinkUrl(provider.provider as 'google' | 'github');
+                    window.location.assign(url);
+                  } finally {
+                    setLinking(null);
+                  }
+                }}>Connect</Button>
+              )}
+            </div>
+          ))}
         </div>
       </Card>
 

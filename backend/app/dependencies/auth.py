@@ -10,13 +10,19 @@ from app.core.security import decode_access_token
 from app.database.session import get_db
 from app.repositories.user import UserRepository
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     session: AsyncSession = Depends(get_db),
 ):
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication credentials were not provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token = credentials.credentials
     try:
         payload = decode_access_token(token)

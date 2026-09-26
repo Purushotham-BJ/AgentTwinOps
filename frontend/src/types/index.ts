@@ -145,6 +145,16 @@ export interface TwinState {
   error_rate: number;
   request_rate: number;
   status: InfrastructureStatus;
+  prediction_type?: PredictionResult['prediction_type'];
+  predicted_value?: number;
+  failure_probability?: number;
+  confidence?: number;
+  risk_level?: RiskLevel;
+  recommended_action?: string;
+  prediction_timestamp?: string;
+  horizon_minutes?: number;
+  prediction_source?: PredictionResult['prediction_source'];
+  model_metrics?: Record<string, number | string | null>;
 }
 
 // ─── Metrics (frontend-only / future API) ────────────────────────────────────
@@ -168,7 +178,7 @@ export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 export interface PredictionRequest {
   service_id: string;
-  horizon_minutes?: number;
+  horizon_minutes: number;
 }
 
 export interface PredictionResult {
@@ -184,15 +194,21 @@ export interface PredictionResult {
   created_at: string;
   horizon_minutes: number;
   data_points: MetricPoint[];
+  status: 'SUCCESS' | 'INSUFFICIENT_DATA' | 'ERROR';
+  historical_metrics: number[];
+  feature_vector: number[][];
+  model_metrics: Record<string, number | string | null>;
+  prediction_source: 'model' | 'heuristic' | 'fallback' | 'none';
 }
 
-// ─── Simulation (frontend-only / future API) ──────────────────────────────────
-export type SimulationScenario = 'cpu_spike' | 'traffic_surge' | 'database_failure' | 'pod_eviction';
+// ─── Digital Twin simulation ──────────────────────────────────────────────────
+export type SimulationScenario = 'cpu_spike' | 'traffic_surge' | 'database_failure' | 'pod_eviction' | 'custom';
 
 export interface SimulationRequest {
   scenario: SimulationScenario;
   service_id: string;
   parameters: Record<string, number | string>;
+  horizon_minutes?: number;
 }
 
 export interface SimulationResult {
@@ -200,6 +216,13 @@ export interface SimulationResult {
   scenario: SimulationScenario;
   service_id: string;
   status: 'running' | 'completed' | 'failed';
+  baseline_state: Record<string, number | string>;
+  scenario_changes: Record<string, number | string>;
+  simulated_state: Record<string, number | string>;
+  simulated_health_score: number;
+  simulated_failure_probability: number;
+  simulated_operational_status: string;
+  impact_summary: string[];
   predicted_impact: {
     cpu_delta: number;
     memory_delta: number;
@@ -221,6 +244,9 @@ export interface Recommendation {
   service_name?: string;
   title: string;
   description: string;
+  type: string;
+  reason: string;
+  action: string;
   priority: RecommendationPriority;
   severity: IncidentSeverity;
   expected_impact: string;
@@ -229,6 +255,7 @@ export interface Recommendation {
   estimated_effort: 'low' | 'medium' | 'high';
   created_at: string;
   source: 'ai' | 'rule' | 'manual';
+  confidence: number;
 }
 
 // ─── Dashboard aggregates ─────────────────────────────────────────────────────
@@ -242,4 +269,19 @@ export interface DashboardSummary {
   critical_incidents: number;
   failure_risk: number; // 0-100
   active_recommendations: number;
+}
+
+export interface OrchestrationResult {
+  service_id: string;
+  status: string;
+  operational_status: string;
+  health_score: number;
+  failure_probability: number;
+  agents: { agent: string; status: string; error?: string }[];
+  monitoring: Record<string, unknown>;
+  predictions: Record<string, Record<string, unknown>>;
+  recommendations: Array<{ id: string; title: string; action: string; priority: string }>;
+  simulations: Record<string, unknown>[];
+  recovery_actions: Array<{ action: string; priority: string; requires_human_approval: boolean }>;
+  errors: string[];
 }

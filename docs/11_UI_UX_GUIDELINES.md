@@ -66,6 +66,8 @@ Reports
 
 Settings
 
+Operations
+
 ---
 
 # Dashboard Layout
@@ -157,6 +159,12 @@ Synchronization Time
 Scenario Selection
 
 Simulation Parameters
+
+Simulation results must be visibly marked as simulated and non-mutating.
+Operations shows agent execution states, prediction output, recommendations,
+simulation output, and proposal-only recovery actions. Core data pages use
+loading, empty, error, and unauthorized states; unavailable report export is
+shown as unavailable rather than simulated.
 
 Simulation Results
 

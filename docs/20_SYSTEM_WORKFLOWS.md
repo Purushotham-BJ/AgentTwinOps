@@ -163,3 +163,26 @@ Charts Updated
 Refresh Rate
 
 Every 5 seconds
+
+---
+
+# Workflow 10: Multi-Agent Operations
+
+Authenticated operator
+        ↓
+Operations API
+        ↓
+Monitoring Agent
+        ↓
+Prediction Agent
+        ↓
+Recommendation Agent
+        ↓
+Simulation Agent (WARNING/CRITICAL)
+        ↓
+Recovery Agent (proposal only)
+        ↓
+Operations Dashboard
+
+The coordinator reuses the existing deterministic agents, isolates optional
+agent failures, and never executes destructive infrastructure changes.

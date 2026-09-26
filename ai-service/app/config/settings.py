@@ -27,9 +27,12 @@ class Settings(BaseSettings):
     # AI Provider
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
     
     # Model Config
+    AI_PROVIDER: str = "gemini"
     AI_MODEL: str = "gpt-4o-mini"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     AI_TEMPERATURE: float = 0.3
     AI_MAX_TOKENS: int = 2000
     
@@ -45,9 +48,9 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
-    @property
-    def is_development(self) -> bool:
-        return self.AI_SERVICE_ENV == "development"
+    # Prediction Config
+    PREDICTION_HORIZON_MINUTES: int = 60  # default horizon in minutes
+    PREDICTION_MIN_HISTORY: int = 30  # minimum number of metric records required
 
-
+    # Existing fields continue unchanged
 settings = Settings()
