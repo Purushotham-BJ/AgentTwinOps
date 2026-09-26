@@ -74,6 +74,10 @@ services:
       - BACKEND_API_TOKEN=${BACKEND_API_TOKEN:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - AI_TEMPERATURE=${AI_TEMPERATURE:-0.3}
+      - AI_MAX_TOKENS=${AI_MAX_TOKENS:-2000}
+      - AI_SERVICE_MODE=${AI_SERVICE_MODE:-real}
     ports:
       - "8001:8001"
     depends_on:

@@ -12,6 +12,9 @@ data:
   BACKEND_API_URL: http://backend:8000
   AI_SERVICE_ENV: production
   AI_SERVICE_MODE: real
+  AI_MODEL: gpt-4o-mini
+  AI_TEMPERATURE: "0.3"
+  AI_MAX_TOKENS: "2000"
   CORS_ORIGINS_AI: https://agenttwinops.example.com
   VITE_API_BASE_URL: https://agenttwinops.example.com
   VITE_AI_API_BASE_URL: https://agenttwinops.example.com

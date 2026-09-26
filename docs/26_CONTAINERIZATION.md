@@ -53,6 +53,13 @@ docker compose logs -f ai-service
 - Optional OAuth variables (`FRONTEND_URL`, provider client IDs/secrets, and
   redirect URIs) must be supplied through deployment secrets; do not commit
   provider credentials. See `docs/27_OAUTH_AUTHENTICATION.md`.
+- The AI service reads `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` from deployment
+  secrets and uses `AI_MODEL`, `AI_TEMPERATURE`, and `AI_MAX_TOKENS` from
+  non-secret configuration.
+- AI-to-backend authentication uses `BACKEND_API_TOKEN` when configured,
+  otherwise it logs in with `BACKEND_SERVICE_EMAIL` and
+  `BACKEND_SERVICE_PASSWORD`. Requests originating from an authenticated
+  user also forward that user's bearer token.
 
 ### Migrations
 To run database migrations after starting the stack:
