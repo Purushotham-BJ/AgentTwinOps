@@ -19,6 +19,20 @@ from app.exceptions.base import AppException
 logger = logging.getLogger(__name__)
 
 
+def _safe_validation_errors(exc: RequestValidationError) -> list[dict]:
+    """Make validation details serializable without exposing password input."""
+    safe_errors = []
+    for error in exc.errors():
+        safe_error = dict(error)
+        if safe_error.get("loc") and "password" in safe_error["loc"]:
+            safe_error.pop("input", None)
+        context = safe_error.get("ctx")
+        if context and "error" in context:
+            safe_error["ctx"] = {**context, "error": str(context["error"])}
+        safe_errors.append(safe_error)
+    return safe_errors
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Attach all global exception handlers to *app*.
 
@@ -58,10 +72,11 @@ def register_exception_handlers(app: FastAPI) -> None:
         exc: RequestValidationError,
     ) -> JSONResponse:
         """Handle Pydantic / path-param validation failures."""
+        safe_errors = _safe_validation_errors(exc)
         logger.warning(
             "RequestValidationError: path=%s errors=%s",
             request.url.path,
-            exc.errors(),
+            safe_errors,
         )
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -70,7 +85,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 "error": {
                     "code": "VALIDATION_ERROR",
                     "message": "Request validation failed.",
-                    "details": exc.errors(),
+                    "details": safe_errors,
                 },
             },
         )

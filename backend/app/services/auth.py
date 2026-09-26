@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.security.password_policy import validate_password_strength
 
 
 class AuthService:
@@ -20,6 +21,7 @@ class AuthService:
     async def register(self, name: str, email: str, password: str) -> User:
         # normalize email
         email = email.strip().lower()
+        validate_password_strength(password)
         hashed = hash_password(password)
         user = User(name=name, email=email, password=hashed)
         try:

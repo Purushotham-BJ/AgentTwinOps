@@ -32,7 +32,7 @@ async def session():
 @pytest.mark.asyncio
 async def test_register_login_profile_logout(client: AsyncClient, session: AsyncSession):
     email = f"auth_{uuid.uuid4().hex[:8]}@example.com"
-    password = "s3cretpw"
+    password = "Secure#2026"
 
     # Register
     resp = await client.post("/api/v1/auth/register", json={"name": "Auth Test", "email": email, "password": password})

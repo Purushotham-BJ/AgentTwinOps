@@ -48,7 +48,7 @@ async def session():
 async def test_infrastructure_crud_and_auth(client: AsyncClient, session: AsyncSession):
     # Register and login
     email = f"infra_{uuid.uuid4().hex[:8]}@example.com"
-    pw = "TestPass123"
+    pw = "Secure#2026"
     await client.post("/api/v1/auth/register", json={"name": "Infra Tester", "email": email, "password": pw})
     resp = await client.post("/api/v1/auth/login", json={"email": email, "password": pw})
     assert resp.status_code == 200

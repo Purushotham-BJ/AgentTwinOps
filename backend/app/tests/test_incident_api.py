@@ -37,7 +37,7 @@ async def client():
 
 async def create_authenticated_headers(client: AsyncClient):
     email = f"incident_{uuid.uuid4().hex[:8]}@example.com"
-    password = "TestPass123"
+    password = "Secure#2026"
     resp = await client.post("/api/v1/auth/register", json={"name": "Incident Tester", "email": email, "password": password})
     assert resp.status_code == 200
     login = await client.post("/api/v1/auth/login", json={"email": email, "password": password})

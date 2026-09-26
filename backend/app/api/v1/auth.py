@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.schemas.responses import ApiResponse
 from app.schemas.auth import (
@@ -26,7 +27,7 @@ async def register(payload: RegisterRequest, session=Depends(get_db)):
     # prevent role escalation by not accepting role in payload
     try:
         user = await service.register(payload.name, payload.email, payload.password)
-    except Exception:
+    except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
     profile = ProfileResponse(

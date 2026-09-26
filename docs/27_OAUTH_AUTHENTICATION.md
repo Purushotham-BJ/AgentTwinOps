@@ -21,6 +21,12 @@ Provider credentials are never sent to the browser. Google requests only
 `openid email profile`; GitHub uses `read:user user:email`. Provider emails must
 be verified (GitHub requires a verified primary email).
 
+Email/password registration requires 8-128 characters, at least one uppercase
+letter, one lowercase letter, one number, and one supported special character.
+The frontend shows these requirements, but the backend enforces them
+independently. Existing password login and OAuth-only accounts are not subject
+to this registration policy.
+
 ## Flow and safety
 
 `/api/v1/auth/oauth/{provider}/login` starts sign-in and
