@@ -63,8 +63,15 @@ docker compose logs -f ai-service
   an LLM-backed result.
 - AI-to-backend authentication uses `BACKEND_API_TOKEN` when configured,
   otherwise it logs in with `BACKEND_SERVICE_EMAIL` and
-  `BACKEND_SERVICE_PASSWORD`. Requests originating from an authenticated
-  user also forward that user's bearer token.
+  `BACKEND_SERVICE_PASSWORD`. If a configured API token is rejected with
+  `401 Unauthorized`, the client clears that stale token, performs one
+  service-account login, and retries the protected request. Requests
+  originating from an authenticated user always forward that user's bearer
+  token and do not fall back to service credentials.
+- The service account only needs a valid local user role for the currently
+  protected read APIs (`infrastructure`, `incidents`, `metrics`, and `twins`);
+  credentials must be supplied through local `.env`, Docker environment
+  substitution, or Kubernetes Secret references. They are never committed.
 
 ### Migrations
 To run database migrations after starting the stack:
