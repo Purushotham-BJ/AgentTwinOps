@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class TwinState(BaseModel):
@@ -30,6 +30,14 @@ class TwinResponse(TwinBase):
     state_version: int
     trends: Dict[str, Any]
     anomalies: List[Dict[str, Any]]
+
+    @field_validator("anomalies", mode="before")
+    @classmethod
+    def normalize_anomalies(cls, value: Any) -> List[Dict[str, Any]]:
+        """Accept legacy empty JSON objects created before anomalies were lists."""
+        if value == {} or value is None:
+            return []
+        return value
 
     model_config = ConfigDict(from_attributes=True)
 
