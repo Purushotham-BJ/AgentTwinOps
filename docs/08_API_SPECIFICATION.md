@@ -151,14 +151,20 @@ Authenticated CSV exports are available for persisted operational data:
 GET /api/v1/reports/infrastructure
 
 GET /api/v1/reports/incidents
+GET /api/v1/reports/predictions
+GET /api/v1/reports/simulations
 
 Infrastructure exports contain service inventory, current status, latest
 persisted metrics, and persisted Digital Twin state where available. Incident
 exports contain persisted incident identifiers, service names, severity,
 incident type, resolution status, and timestamps. Empty datasets return a CSV
-with headers and no fabricated rows. Prediction and simulation exports remain
-unavailable because those responses are transient and are not persisted as
-report history.
+with headers and no fabricated rows. Prediction and simulation executions are
+persisted in `prediction_history` and `simulation_history`; their authenticated
+history endpoints are `GET /api/v1/predictions/history` and
+`GET /api/v1/simulations/history`, and the report endpoints export those rows.
+AI execution services create history through the corresponding authenticated
+POST endpoints. Simulation history stores what-if results only and never mutates
+operational infrastructure, metric, or Twin state.
 
 ---
 

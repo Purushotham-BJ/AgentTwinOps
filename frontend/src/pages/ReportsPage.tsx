@@ -15,8 +15,8 @@ type ReportType = 'infrastructure' | 'incidents' | 'prediction' | 'simulation';
 const REPORT_CONFIGS = [
   { type: 'infrastructure' as ReportType, title: 'Infrastructure Report', description: 'Service inventory, health status, latest metrics, and twin state', icon: Server, color: 'var(--color-blue-400)', bg: 'rgba(56,139,253,0.1)', exportable: true },
   { type: 'incidents' as ReportType, title: 'Incident Report', description: 'Persisted incident history, severity, status, and timestamps', icon: AlertTriangle, color: 'var(--color-orange-300)', bg: 'rgba(255,166,87,0.1)', exportable: true },
-  { type: 'prediction' as ReportType, title: 'Prediction Report', description: 'AI prediction accuracy, risk trends, and failure forecasts', icon: Brain, color: 'var(--color-purple-400)', bg: 'rgba(188,140,255,0.1)', exportable: false },
-  { type: 'simulation' as ReportType, title: 'Simulation Report', description: 'Scenario results, impact analysis, and mitigation recommendations', icon: FlaskConical, color: 'var(--color-cyan-400)', bg: 'rgba(57,213,255,0.1)', exportable: false },
+  { type: 'prediction' as ReportType, title: 'Prediction Report', description: 'Persisted AI prediction executions, risk trends, and failure forecasts', icon: Brain, color: 'var(--color-purple-400)', bg: 'rgba(188,140,255,0.1)', exportable: true },
+  { type: 'simulation' as ReportType, title: 'Simulation Report', description: 'Persisted scenario results, impact analysis, and mitigation recommendations', icon: FlaskConical, color: 'var(--color-cyan-400)', bg: 'rgba(57,213,255,0.1)', exportable: true },
 ];
 
 export function ReportsPage() {
@@ -28,11 +28,12 @@ export function ReportsPage() {
   if (infraLoading || incLoading) return <LoadingState message="Loading report data..." />;
 
   const exportReport = async (type: ReportType) => {
-    if (type !== 'infrastructure' && type !== 'incidents') return;
+    if (!['infrastructure', 'incidents', 'prediction', 'simulation'].includes(type)) return;
     setExporting(type);
     setExportError(null);
     try {
-      const { blob, filename } = await downloadReport(type as ExportableReportType);
+      const apiType = type === 'prediction' ? 'predictions' : type === 'simulation' ? 'simulations' : type;
+      const { blob, filename } = await downloadReport(apiType as ExportableReportType);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -54,7 +55,7 @@ export function ReportsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <Badge variant="muted">CSV export available for infrastructure and incident data</Badge>
+        <Badge variant="muted">CSV export available for persisted infrastructure, incident, prediction, and simulation data</Badge>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
           <Calendar size={12} />Report date: {formatDate(new Date().toISOString())}
         </div>

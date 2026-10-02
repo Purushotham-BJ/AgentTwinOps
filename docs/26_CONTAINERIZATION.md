@@ -170,11 +170,17 @@ The EC2-style Compose profile was validated locally with a protected `.env.aws` 
   prerequisites.
 
 Report exports use authenticated CSV downloads through
-`/api/v1/reports/infrastructure` and `/api/v1/reports/incidents`. The files are
+`/api/v1/reports/infrastructure`, `/api/v1/reports/incidents`,
+`/api/v1/reports/predictions`, and `/api/v1/reports/simulations`. The files are
 generated from persisted PostgreSQL infrastructure, latest metrics, Digital
-Twin, and incident data. Prediction and simulation exports remain unavailable
-because their current API results are transient and are not stored as report
-history.
+Twin, incident, prediction-history, and simulation-history data. The AI service
+writes prediction and simulation executions through authenticated backend
+endpoints. Simulation history is non-mutating by design.
+
+The backend optionally creates the configured `BACKEND_SERVICE_EMAIL` account
+at startup when both service credentials are supplied through the deployment
+environment. This is idempotent, never overwrites an existing password, never
+deletes users, and does not store credentials in Git.
 
 ### Troubleshooting
 - **AI Service `401 Unauthorized`**: If the AI service cannot reach the backend with authorization, ensure `BACKEND_SERVICE_EMAIL` and `BACKEND_SERVICE_PASSWORD` in `docker-compose.yml` match a registered backend user.

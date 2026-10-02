@@ -9,6 +9,7 @@ from app.api.v1.incidents import router as incidents_router
 from app.api.v1.metrics import router as metrics_router
 from app.api.v1.twins import router as twins_router
 from app.api.v1.reports import router as reports_router
+from app.api.v1.history import router as history_router
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ router.include_router(incidents_router)
 router.include_router(metrics_router)
 router.include_router(twins_router)
 router.include_router(reports_router)
+router.include_router(history_router)
 
 # Future domain routers will be added below, e.g.:
 # from app.api.v1.agents import router as agents_router

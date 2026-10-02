@@ -35,16 +35,16 @@
 - Prediction pipeline: CPU and memory Random Forest forecasts use backend historical metrics, deterministic lag features, explicit insufficient-data handling, model metrics, and prediction-source reporting.
 - Twin integration: Successful CPU and memory forecasts persist `predicted_state` without overwriting `current_state`.
 - Recommendation engine: Deterministic rule engine evaluates metrics, Digital Twin state, incidents, failure risk, and anomalies without mutating operational data.
-- Multi-agent operations: Authenticated `/api/v1/agents/orchestrate` coordinates monitoring, pure prediction, recommendations, transient simulation, and proposal-only recovery with isolated agent statuses.
+- Multi-agent operations: Authenticated `/api/v1/agents/orchestrate` coordinates monitoring, prediction, recommendations, non-mutating simulation, and proposal-only recovery with isolated agent statuses.
 - Frontend integration: Dashboard and Metrics use real backend metrics; Digital Twin uses backend Twin state; AI-facing services share authenticated token-expiry handling; Operations is available from primary navigation.
 
 ## Frontend
 - Status: Containerized via Vite dev server.
 - Startup: Successfully mapped to port 5173.
 - Reports: Authenticated CSV exports are implemented for persisted
-  infrastructure and incident data. Prediction and simulation export actions
-  remain unavailable because those workflows are transient and have no
-  persisted report history.
+  infrastructure, incident, prediction, and simulation data. Prediction and
+  simulation executions are persisted in dedicated history tables and exported
+  through authenticated CSV endpoints.
 
 ## Testing
 - Backend tests: 31 passed / 1 skipped / 0 failed.

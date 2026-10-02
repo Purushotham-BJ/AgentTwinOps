@@ -266,6 +266,26 @@ class BackendClient:
             response.raise_for_status()
             return response.json()
 
+    async def create_prediction_history(self, result: Dict[str, Any], auth_token: str | None = None) -> Dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{self.base_url}/api/v1/predictions/history",
+                headers=await self._get_headers_with_fallback(auth_token),
+                json=result,
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def create_simulation_history(self, result: Dict[str, Any], auth_token: str | None = None) -> Dict[str, Any]:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{self.base_url}/api/v1/simulations/history",
+                headers=await self._get_headers_with_fallback(auth_token),
+                json=result,
+            )
+            response.raise_for_status()
+            return response.json()
+
     def _mock_infrastructure(self) -> List[Dict[str, Any]]:
         """Mock infrastructure data for development"""
         from datetime import datetime

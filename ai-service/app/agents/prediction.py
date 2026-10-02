@@ -2,6 +2,7 @@
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 import random
+import asyncio
 from .base import BaseAgent
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -91,7 +92,7 @@ class PredictionAgent(BaseAgent):
                 ])
                 parser = JsonOutputParser()
                 chain = prompt | self.llm | parser
-                ai_analysis = await chain.ainvoke({})
+                ai_analysis = await asyncio.wait_for(chain.ainvoke({}), timeout=5)
                 risk_factors = ai_analysis.get("factors", [])
             except Exception:
                 risk_factors = ["CPU utilization trending upward", "Peak traffic period approaching", "Background processes increasing load"]

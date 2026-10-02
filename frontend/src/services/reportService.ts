@@ -1,6 +1,6 @@
 import api from './api';
 
-export type ExportableReportType = 'infrastructure' | 'incidents';
+export type ExportableReportType = 'infrastructure' | 'incidents' | 'predictions' | 'simulations';
 
 export async function downloadReport(type: ExportableReportType): Promise<{ blob: Blob; filename: string }> {
   const response = await api.get(`/api/v1/reports/${type}`, { responseType: 'blob' });

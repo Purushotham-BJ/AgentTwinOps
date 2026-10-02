@@ -17,7 +17,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 @router.get("/{report_type}")
 async def export_report(
-    report_type: Literal["infrastructure", "incidents"],
+    report_type: Literal["infrastructure", "incidents", "predictions", "simulations"],
     session: AsyncSession = Depends(get_db),
     _user=Depends(get_current_user),
 ) -> Response:
@@ -26,6 +26,10 @@ async def export_report(
         content = await service.infrastructure_csv()
     elif report_type == "incidents":
         content = await service.incidents_csv()
+    elif report_type == "predictions":
+        content = await service.predictions_csv()
+    elif report_type == "simulations":
+        content = await service.simulations_csv()
     else:
         raise HTTPException(status_code=404, detail="Report type is not available")
 

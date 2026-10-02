@@ -99,3 +99,71 @@ async def test_incident_report_returns_csv_and_empty_reports_have_headers(client
     assert "incident_id,service_id,service_name" in response.text
     assert "Incident Report API" in response.text
     assert "latency" in response.text
+
+
+@pytest.mark.asyncio
+async def test_prediction_and_simulation_history_are_persisted_and_exported(client: AsyncClient):
+    headers = await authenticated_headers(client)
+    infrastructure = await client.post(
+        "/api/v1/infrastructure",
+        headers=headers,
+        json={"service_name": "History Report API", "service_type": "api", "host": "localhost"},
+    )
+    assert infrastructure.status_code == 201
+    service_id = infrastructure.json()["data"]["id"]
+
+    prediction = await client.post(
+        "/api/v1/predictions/history",
+        headers=headers,
+        json={
+            "service_id": service_id,
+            "prediction_type": "failure",
+            "predicted_value": 72.5,
+            "confidence": 0.88,
+            "failure_probability": 0.12,
+            "risk_level": "medium",
+            "factors": ["CPU trend"],
+            "recommended_action": "Monitor closely",
+            "status": "SUCCESS",
+            "horizon_minutes": 60,
+            "historical_metrics": [60.0, 65.0],
+            "model_metrics": {"mae": 1.1},
+            "prediction_source": "model",
+        },
+    )
+    assert prediction.status_code == 201
+
+    simulation = await client.post(
+        "/api/v1/simulations/history",
+        headers=headers,
+        json={
+            "service_id": service_id,
+            "scenario": "cpu_spike",
+            "status": "completed",
+            "baseline_state": {"cpu_usage": 20.0},
+            "scenario_changes": {"cpu_usage": 45.0},
+            "simulated_state": {"cpu_usage": 65.0},
+            "simulated_health_score": 100.0,
+            "simulated_failure_probability": 0.0,
+            "simulated_operational_status": "HEALTHY",
+            "impact_summary": ["CPU usage changed"],
+            "predicted_impact": {"cpu_delta": 45.0},
+            "recommendations": ["Continue monitoring"],
+            "completed_at": "2026-01-01T00:00:00Z",
+        },
+    )
+    assert simulation.status_code == 201
+
+    prediction_history = await client.get("/api/v1/predictions/history", headers=headers)
+    simulation_history = await client.get("/api/v1/simulations/history", headers=headers)
+    assert prediction_history.status_code == 200
+    assert simulation_history.status_code == 200
+    assert prediction_history.json()["total"] >= 1
+    assert simulation_history.json()["total"] >= 1
+
+    prediction_report = await client.get("/api/v1/reports/predictions", headers=headers)
+    simulation_report = await client.get("/api/v1/reports/simulations", headers=headers)
+    assert prediction_report.status_code == 200
+    assert simulation_report.status_code == 200
+    assert "History Report API" in prediction_report.text
+    assert "cpu_spike" in simulation_report.text

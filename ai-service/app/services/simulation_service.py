@@ -1,11 +1,14 @@
 """Backend-backed, non-persistent Digital Twin simulation service."""
 from datetime import datetime, timedelta
 from uuid import uuid4
+import logging
 
 from app.agents.simulation import SimulationAgent
 from app.schemas.common import MetricPoint
 from app.schemas.simulation import SimulationImpact, SimulationResult
 from app.services.backend_client import backend_client
+
+logger = logging.getLogger(__name__)
 
 
 class SimulationService:
@@ -52,7 +55,7 @@ class SimulationService:
             latency_delta=simulated["latency_ms"] - calculation["baseline"]["latency_ms"],
             failure_probability=calculation["simulated_failure_probability"],
         )
-        return SimulationResult(
+        result = SimulationResult(
             id=str(uuid4()),
             scenario=scenario,
             service_id=service_id,
@@ -72,6 +75,13 @@ class SimulationService:
             created_at=created_at,
             completed_at=created_at,
         )
+        try:
+            await backend_client.create_simulation_history(
+                result.model_dump(mode="json"), auth_token=auth_token
+            )
+        except Exception as history_exc:
+            logger.error("Simulation history persistence FAILED for service=%s: %s", service_id, history_exc)
+        return result
 
 
 simulation_service = SimulationService()

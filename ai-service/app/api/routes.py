@@ -95,6 +95,8 @@ async def simulate_scenario(
     authorization: str | None = Header(default=None),
 ):
     """Run simulation scenario"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication credentials were not provided")
     try:
         result = await simulation_service.simulate(
             scenario=request.scenario,

@@ -9,6 +9,8 @@ from app.models.infrastructure import Infrastructure, InfrastructureStatus
 from app.models.user import User, UserRole, UserAuthAccount
 from app.models.metric import Metric
 from app.models.twin import Twin, TwinHistory
+from app.models.prediction import PredictionHistory
+from app.models.simulation import SimulationHistory
 
 __all__ = [
     "Base",
@@ -23,4 +25,6 @@ __all__ = [
     "Metric",
     "Twin",
     "TwinHistory",
+    "PredictionHistory",
+    "SimulationHistory",
 ]
