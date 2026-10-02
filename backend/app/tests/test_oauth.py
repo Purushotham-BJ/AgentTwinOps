@@ -32,6 +32,10 @@ def test_authorization_url_contains_configured_redirect(monkeypatch):
     service = OAuthService(None)
     monkeypatch.setattr("app.services.oauth.settings.GOOGLE_CLIENT_ID", "google-client")
     monkeypatch.setattr("app.services.oauth.settings.GOOGLE_CLIENT_SECRET", SecretStr("google-secret"))
+    monkeypatch.setattr(
+        "app.services.oauth.settings.GOOGLE_REDIRECT_URI",
+        "http://localhost:8000/api/v1/auth/oauth/google/callback",
+    )
     url = service.authorization_url("google")
     assert "client_id=google-client" in url
     assert "redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2Fv1%2Fauth%2Foauth%2Fgoogle%2Fcallback" in url
