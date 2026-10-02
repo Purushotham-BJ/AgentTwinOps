@@ -35,7 +35,7 @@ export const metricsService = {
     latency: MetricPoint[];
     network: MetricPoint[];
   }> {
-    const response = await api.get(PREFIX, { params: { limit: 1000 } });
+    const response = await api.get(`${PREFIX}/`, { params: { limit: 1000 } });
     const items = response.data.items ?? [];
     return {
       cpu: items.map((item: BackendMetric) => ({ timestamp: item.timestamp, value: item.cpu_usage })),
