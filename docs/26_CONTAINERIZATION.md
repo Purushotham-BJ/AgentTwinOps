@@ -149,6 +149,26 @@ To run backend tests inside the container (against the docker database):
 docker compose exec backend pytest
 ```
 
+### Local production-profile validation
+
+The EC2-style Compose profile was validated locally with a protected `.env.aws` file:
+
+- Nginx served the frontend on port `80`; backend, AI service, and PostgreSQL remained
+  private to the Compose network.
+- `/api/v1/health`, `/ai/status`, and `/ai/api/v1/health` returned HTTP 200.
+- Authenticated infrastructure, metrics, Digital Twin, recommendations, simulation,
+  orchestration, and CPU prediction requests completed successfully through the Nginx
+  `/api/` and `/ai/` proxies.
+- Unauthenticated and invalid-token protected API requests returned HTTP 401.
+- The registration form displayed live password requirements, confirm-password validation,
+  and retained Google/GitHub sign-in buttons.
+- The stack was stopped and restarted with `docker compose ... down` followed by
+  `docker compose ... up -d`; users, infrastructure, incidents, metrics, and twin rows
+  remained available afterward. PostgreSQL data was preserved in the named
+  `agenttwinops-main_postgres_data` volume.
+- AWS deployment was not performed. HTTPS and a production domain remain deployment
+  prerequisites.
+
 ### Troubleshooting
 - **AI Service `401 Unauthorized`**: If the AI service cannot reach the backend with authorization, ensure `BACKEND_SERVICE_EMAIL` and `BACKEND_SERVICE_PASSWORD` in `docker-compose.yml` match a registered backend user.
 - **Backend Test Imports**: If running pytest natively, ensure `PYTHONPATH` does not conflict with the project root.
