@@ -41,6 +41,10 @@
 ## Frontend
 - Status: Containerized via Vite dev server.
 - Startup: Successfully mapped to port 5173.
+- Reports: Authenticated CSV exports are implemented for persisted
+  infrastructure and incident data. Prediction and simulation export actions
+  remain unavailable because those workflows are transient and have no
+  persisted report history.
 
 ## Testing
 - Backend tests: 31 passed / 1 skipped / 0 failed.

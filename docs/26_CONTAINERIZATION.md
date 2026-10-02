@@ -169,6 +169,13 @@ The EC2-style Compose profile was validated locally with a protected `.env.aws` 
 - AWS deployment was not performed. HTTPS and a production domain remain deployment
   prerequisites.
 
+Report exports use authenticated CSV downloads through
+`/api/v1/reports/infrastructure` and `/api/v1/reports/incidents`. The files are
+generated from persisted PostgreSQL infrastructure, latest metrics, Digital
+Twin, and incident data. Prediction and simulation exports remain unavailable
+because their current API results are transient and are not stored as report
+history.
+
 ### Troubleshooting
 - **AI Service `401 Unauthorized`**: If the AI service cannot reach the backend with authorization, ensure `BACKEND_SERVICE_EMAIL` and `BACKEND_SERVICE_PASSWORD` in `docker-compose.yml` match a registered backend user.
 - **Backend Test Imports**: If running pytest natively, ensure `PYTHONPATH` does not conflict with the project root.

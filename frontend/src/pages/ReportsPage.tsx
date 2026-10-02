@@ -7,26 +7,49 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatDate, formatDateTime } from '@/utils/format';
+import { downloadReport, type ExportableReportType } from '@/services/reportService';
+import { getErrorMessage } from '@/services/api';
 
 type ReportType = 'infrastructure' | 'incidents' | 'prediction' | 'simulation';
 
 const REPORT_CONFIGS = [
-  { type: 'infrastructure' as ReportType, title: 'Infrastructure Report', description: 'Service inventory, health status, uptime, and configuration overview', icon: Server, color: 'var(--color-blue-400)', bg: 'rgba(56,139,253,0.1)' },
-  { type: 'incidents' as ReportType, title: 'Incident Report', description: 'Incident history, severity distribution, resolution times, and trends', icon: AlertTriangle, color: 'var(--color-orange-300)', bg: 'rgba(255,166,87,0.1)' },
-  { type: 'prediction' as ReportType, title: 'Prediction Report', description: 'AI prediction accuracy, risk trends, and failure forecasts', icon: Brain, color: 'var(--color-purple-400)', bg: 'rgba(188,140,255,0.1)' },
-  { type: 'simulation' as ReportType, title: 'Simulation Report', description: 'Scenario results, impact analysis, and mitigation recommendations', icon: FlaskConical, color: 'var(--color-cyan-400)', bg: 'rgba(57,213,255,0.1)' },
+  { type: 'infrastructure' as ReportType, title: 'Infrastructure Report', description: 'Service inventory, health status, latest metrics, and twin state', icon: Server, color: 'var(--color-blue-400)', bg: 'rgba(56,139,253,0.1)', exportable: true },
+  { type: 'incidents' as ReportType, title: 'Incident Report', description: 'Persisted incident history, severity, status, and timestamps', icon: AlertTriangle, color: 'var(--color-orange-300)', bg: 'rgba(255,166,87,0.1)', exportable: true },
+  { type: 'prediction' as ReportType, title: 'Prediction Report', description: 'AI prediction accuracy, risk trends, and failure forecasts', icon: Brain, color: 'var(--color-purple-400)', bg: 'rgba(188,140,255,0.1)', exportable: false },
+  { type: 'simulation' as ReportType, title: 'Simulation Report', description: 'Scenario results, impact analysis, and mitigation recommendations', icon: FlaskConical, color: 'var(--color-cyan-400)', bg: 'rgba(57,213,255,0.1)', exportable: false },
 ];
 
 export function ReportsPage() {
+  const [exporting, setExporting] = useState<ReportType | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const { items: infra, isLoading: infraLoading } = useInfrastructure();
   const { items: incidents, isLoading: incLoading } = useIncidents();
 
   if (infraLoading || incLoading) return <LoadingState message="Loading report data..." />;
 
+  const exportReport = async (type: ReportType) => {
+    if (type !== 'infrastructure' && type !== 'incidents') return;
+    setExporting(type);
+    setExportError(null);
+    try {
+      const { blob, filename } = await downloadReport(type as ExportableReportType);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setExportError(getErrorMessage(error));
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <Badge variant="muted">Report export API is not available</Badge>
+        <Badge variant="muted">CSV export available for infrastructure and incident data</Badge>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
           <Calendar size={12} />Report date: {formatDate(new Date().toISOString())}
         </div>
@@ -34,7 +57,7 @@ export function ReportsPage() {
 
       {/* Report cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
-        {REPORT_CONFIGS.map(({ type, title, description, icon: Icon, color, bg }) => (
+        {REPORT_CONFIGS.map(({ type, title, description, icon: Icon, color, bg, exportable }) => (
           <Card key={type} hover>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               <div style={{ width: '44px', height: '44px', flexShrink: 0, background: bg, borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -46,11 +69,24 @@ export function ReportsPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <Button variant="secondary" size="sm" disabled leftIcon={<Download size={13} />} style={{ flex: 1 }}>Export unavailable</Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!exportable}
+                isLoading={exporting === type}
+                onClick={() => void exportReport(type)}
+                leftIcon={<Download size={13} />}
+                style={{ flex: 1 }}
+              >
+                {exportable ? 'Export CSV' : 'Export unavailable'}
+              </Button>
             </div>
           </Card>
         ))}
       </div>
+      {exportError && (
+        <Badge variant="error">Report export failed: {exportError}</Badge>
+      )}
 
       {/* Infrastructure summary table */}
       <Card>
