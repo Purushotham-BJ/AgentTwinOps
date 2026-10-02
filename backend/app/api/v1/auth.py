@@ -17,6 +17,11 @@ from app.dependencies.auth import get_current_user
 from app.database.session import get_db
 from app.services.auth import AuthService
 from app.services.oauth import OAuthService
+from app.database.session import async_session_factory
+from app.services.demo_environment import initialize_default_demo_environment
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -29,6 +34,12 @@ async def register(payload: RegisterRequest, session=Depends(get_db)):
         user = await service.register(payload.name, payload.email, payload.password)
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    try:
+        async with async_session_factory() as demo_session:
+            await initialize_default_demo_environment(demo_session, user.id)
+    except Exception:
+        logger.exception("Optional default demo initialization failed for user %s", user.id)
 
     profile = ProfileResponse(
         id=user.id,

@@ -17,6 +17,7 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { formatRelativeTime, formatPercent, formatRiskScore } from '@/utils/format';
 import { getSeverityColor, getSeverityBg, getResolutionColor, getResolutionBg } from '@/utils/statusHelpers';
 import type { InfrastructureStatus } from '@/types';
+import { MockDataBanner } from '@/components/common/MockDataBanner';
 
 function getStatusBadgeVariant(status: InfrastructureStatus) {
   switch (status) {
@@ -57,6 +58,7 @@ export function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <MockDataBanner feature="Shared sample infrastructure is available for onboarding and exploration." />
 
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>

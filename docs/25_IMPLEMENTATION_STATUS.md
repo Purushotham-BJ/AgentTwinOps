@@ -46,6 +46,16 @@
   simulation executions are persisted in dedicated history tables and exported
   through authenticated CSV endpoints.
 
+## Onboarding demo environment
+- A single shared, deterministic demo environment is initialized once after
+  the first successful account registration.
+- Initialization is tracked in `demo_environments` and is idempotent; later
+  registrations reuse the same sample services instead of creating globally
+  visible duplicates.
+- Registration remains successful if optional demo initialization fails.
+- Operational data remains global in the current architecture; this feature
+  does not add user-level ownership.
+
 ## Testing
 - Backend tests: 31 passed / 1 skipped / 0 failed.
 - AI-service tests: Sprint 7 baseline 17 passed; Sprint 8 recommendation coverage added.

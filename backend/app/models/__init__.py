@@ -11,6 +11,7 @@ from app.models.metric import Metric
 from app.models.twin import Twin, TwinHistory
 from app.models.prediction import PredictionHistory
 from app.models.simulation import SimulationHistory
+from app.models.demo_environment import DemoEnvironment
 
 __all__ = [
     "Base",
@@ -27,4 +28,5 @@ __all__ = [
     "TwinHistory",
     "PredictionHistory",
     "SimulationHistory",
+    "DemoEnvironment",
 ]

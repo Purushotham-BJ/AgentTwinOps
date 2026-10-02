@@ -25,7 +25,7 @@ export function MockDataBanner({ feature, apiEndpoint }: MockDataBannerProps) {
     }}>
       <FlaskConical size={12} style={{ flexShrink: 0 }} />
       <span>
-        <strong>SIMULATED DATA</strong> — {feature}
+        <strong>DEMO ENVIRONMENT</strong> — {feature}
         {apiEndpoint && (
           <span style={{ color: 'var(--color-text-muted)', marginLeft: '4px' }}>
             (pending: {apiEndpoint})
