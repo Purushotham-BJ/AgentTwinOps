@@ -4,6 +4,7 @@
  */
 import type { PredictionResult, PredictionRequest } from '@/types';
 import aiClient from './aiClient';
+import apiClient from './api';
 
 export const predictionService = {
   /**
@@ -38,6 +39,7 @@ export const predictionService = {
    * NOTE: Not yet implemented in AI service
    */
   async listPredictions(): Promise<PredictionResult[]> {
-    return [];
+    const response = await apiClient.get('/api/v1/predictions/history');
+    return response.data.items;
   },
 };

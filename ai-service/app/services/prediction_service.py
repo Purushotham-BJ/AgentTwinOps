@@ -164,6 +164,19 @@ class PredictionService:
                 result.model_metrics = dict(result.model_metrics)
                 result.model_metrics["twin_sync_error"] = str(sync_exc)
 
+        history_payload = result.model_dump(mode="json")
+        history_payload.pop("id", None)
+        history_payload.pop("data_points", None)
+        history_payload.pop("feature_vector", None)
+        try:
+            await backend_client.create_prediction_history(history_payload, auth_token=auth_token)
+        except Exception as history_exc:
+            logger.error(
+                "Prediction history persistence FAILED for service=%s: %s",
+                service_id,
+                history_exc,
+            )
+
         return result
 
     # ------------------------------------------------------------------

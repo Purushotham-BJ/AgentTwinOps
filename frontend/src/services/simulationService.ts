@@ -3,6 +3,7 @@
  * Connected to AI Service (LangGraph multi-agent system)
  */
 import axios from 'axios';
+import api from './api';
 import type { SimulationRequest, SimulationResult } from '@/types';
 
 const AI_API_BASE = import.meta.env.VITE_AI_API_BASE_URL || 'http://localhost:8001';
@@ -34,6 +35,7 @@ export const simulationService = {
    * NOTE: Not yet implemented in AI service
    */
   async list(): Promise<SimulationResult[]> {
-    return [];
+    const response = await api.get('/api/v1/simulations/history');
+    return response.data.items;
   },
 };

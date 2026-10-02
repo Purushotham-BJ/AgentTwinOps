@@ -42,10 +42,22 @@ async def test_register_login_profile_logout(client: AsyncClient, session: Async
     assert "password" not in data
 
     # Login
-    resp = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    resp = await client.post("/api/v1/auth/login", json={"email": f"  {email.upper()}  ", "password": password})
     assert resp.status_code == 200
     token = resp.json()["data"]["access_token"]
     assert token
+
+    wrong_password = await client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": "Wrong@123"},
+    )
+    assert wrong_password.status_code == 401
+
+    unknown_user = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "unknown-existing-user@example.com", "password": password},
+    )
+    assert unknown_user.status_code == 401
 
     headers = {"Authorization": f"Bearer {token}"}
 

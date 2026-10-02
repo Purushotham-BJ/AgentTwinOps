@@ -36,6 +36,8 @@ class BaseConfig(BaseSettings):
 
     # ── Security ────────────────────────────────────────────────
     SECRET_KEY: SecretStr = Field(default=SecretStr("super-secret-default-key"))
+    BACKEND_SERVICE_EMAIL: str = ""
+    BACKEND_SERVICE_PASSWORD: SecretStr = Field(default=SecretStr(""))
 
     # ── Database ────────────────────────────────────────────────
     DATABASE_URL: str = Field(

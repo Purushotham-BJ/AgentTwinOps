@@ -18,6 +18,10 @@ from fastapi import FastAPI
 
 from app.config.settings import get_settings
 from app.database.engine import engine
+from app.database.session import async_session_factory
+from app.models.user import User
+from app.core.security import hash_password
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -37,6 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     None
         Control returns to the ASGI server while the app is running.
     """
+    await _ensure_service_account()
     # Import the collector
     from app.collector.collector import collect_metrics
 
@@ -84,3 +89,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.exception("Error while disposing database engine during shutdown")
 
     logger.info("[SHUTDOWN] Shutdown complete.")
+
+
+async def _ensure_service_account() -> None:
+    """Create the configured AI service identity once, without changing users."""
+    email = settings.BACKEND_SERVICE_EMAIL.strip().lower()
+    password = settings.BACKEND_SERVICE_PASSWORD.get_secret_value()
+    if not email or not password:
+        return
+    async with async_session_factory() as session:
+        existing = await session.scalar(select(User).where(User.email == email))
+        if existing:
+            return
+        session.add(User(name="AgentTwinOps Service", email=email, password=hash_password(password)))
+        await session.commit()
+        logger.info("[STARTUP] Configured service account created")
